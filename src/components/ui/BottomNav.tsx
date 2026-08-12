@@ -2,7 +2,7 @@ import { View, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/theme/ThemeContext";
-import { palette, radius, spacing } from "@/theme/tokens";
+import { radius, spacing } from "@/theme/tokens";
 import { Text } from "@/components/ui/Text";
 
 export type BottomNavItem = {

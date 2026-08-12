@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ScrollView, View, StyleSheet, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing, radius } from "@/theme/tokens";
 import {
