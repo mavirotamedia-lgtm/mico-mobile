@@ -1,0 +1,55 @@
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useColorScheme } from "react-native";
+import * as SecureStore from "expo-secure-store";
+import { darkTheme, lightTheme, type Theme } from "@/theme/tokens";
+
+type ThemePreference = "light" | "dark" | "system";
+const STORAGE_KEY = "mico.themePreference";
+
+type ThemeContextValue = {
+  theme: Theme;
+  preference: ThemePreference;
+  setPreference: (pref: ThemePreference) => void;
+  toggle: () => void;
+};
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const systemScheme = useColorScheme();
+  const [preference, setPreferenceState] = useState<ThemePreference>("system");
+
+  useEffect(() => {
+    SecureStore.getItemAsync(STORAGE_KEY).then((stored) => {
+      if (stored === "light" || stored === "dark" || stored === "system") {
+        setPreferenceState(stored);
+      }
+    });
+  }, []);
+
+  function setPreference(pref: ThemePreference) {
+    setPreferenceState(pref);
+    SecureStore.setItemAsync(STORAGE_KEY, pref).catch(() => {});
+  }
+
+  const resolvedMode = preference === "system" ? (systemScheme ?? "light") : preference;
+  const theme = resolvedMode === "dark" ? darkTheme : lightTheme;
+
+  const value = useMemo<ThemeContextValue>(
+    () => ({
+      theme,
+      preference,
+      setPreference,
+      toggle: () => setPreference(resolvedMode === "dark" ? "light" : "dark"),
+    }),
+    [theme, preference, resolvedMode]
+  );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
+export function useTheme() {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error("useTheme, ThemeProvider içinde kullanılmalı.");
+  return ctx;
+}
