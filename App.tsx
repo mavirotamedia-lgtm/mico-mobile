@@ -11,13 +11,15 @@ import {
 } from "@expo-google-fonts/manrope";
 import { ThemeProvider, useTheme } from "@/theme/ThemeContext";
 import { ToastProvider } from "@/components/ui";
-import { DesignSystemShowcase } from "@/screens/dev/DesignSystemShowcase";
+import { AuthProvider } from "@/store/AuthContext";
+import { RootNavigator } from "@/navigation/RootNavigator";
+import { palette } from "@/theme/tokens";
 
 function AppContent() {
   const { theme } = useTheme();
   return (
     <>
-      <DesignSystemShowcase />
+      <RootNavigator />
       <StatusBar style={theme.mode === "dark" ? "light" : "dark"} />
     </>
   );
@@ -34,8 +36,8 @@ export default function App() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#0A1730" }}>
-        <ActivityIndicator color="#C9A227" />
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: palette.navy950 }}>
+        <ActivityIndicator color={palette.gold500} />
       </View>
     );
   }
@@ -44,7 +46,9 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <ToastProvider>
-          <AppContent />
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
         </ToastProvider>
       </ThemeProvider>
     </SafeAreaProvider>

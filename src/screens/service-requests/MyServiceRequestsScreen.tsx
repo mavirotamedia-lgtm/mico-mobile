@@ -1,0 +1,107 @@
+import { useCallback, useState } from "react";
+import { FlatList, View, StyleSheet, RefreshControl } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import type { CompositeScreenProps } from "@react-navigation/native";
+import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
+import * as serviceRequestsApi from "@/api/serviceRequests";
+import { useTheme } from "@/theme/ThemeContext";
+import { spacing } from "@/theme/tokens";
+import { Text, Card, Badge, ScreenContainer } from "@/components/ui";
+import type { MainTabParamList } from "@/navigation/MainTabs";
+import type { AppStackParamList } from "@/navigation/RootNavigator";
+import type { ServiceRequest, ServiceRequestStatus } from "@/types/mico";
+import { SPECIALTY_LABELS } from "@/types/mico";
+
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<MainTabParamList, "ServiceRequests">,
+  NativeStackScreenProps<AppStackParamList>
+>;
+
+const STATUS_TONE: Record<ServiceRequestStatus, "success" | "warning" | "danger" | "neutral"> = {
+  OPEN: "neutral",
+  OFFER_RECEIVED: "warning",
+  ASSIGNED: "success",
+  COMPLETED: "success",
+  CANCELLED: "danger",
+};
+
+const STATUS_LABEL: Record<ServiceRequestStatus, string> = {
+  OPEN: "Teklif bekleniyor",
+  OFFER_RECEIVED: "Teklif geldi",
+  ASSIGNED: "Usta atandı",
+  COMPLETED: "Tamamlandı",
+  CANCELLED: "İptal edildi",
+};
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("tr-TR");
+}
+
+export function MyServiceRequestsScreen({ navigation }: Props) {
+  const { theme } = useTheme();
+  const [requests, setRequests] = useState<ServiceRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await serviceRequestsApi.listMyServiceRequests();
+      setRequests(res.items);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
+
+  return (
+    <ScreenContainer>
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.sm }}>
+        <Text variant="h1" weight="bold">
+          Teklifler
+        </Text>
+      </View>
+
+      <FlatList
+        data={requests}
+        keyExtractor={(item) => item.id}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} tintColor={theme.primary} />}
+        contentContainerStyle={{ padding: spacing.lg, flexGrow: 1 }}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Ionicons name="pricetag-outline" size={36} color={theme.textSecondary} />
+            <Text variant="body" color="secondary" style={{ marginTop: spacing.sm, textAlign: "center" }}>
+              Henüz servis talebin yok. Alttaki + butonuyla oluşturabilirsin.
+            </Text>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <Card
+            onPress={() => navigation.navigate("Offers", { serviceRequestId: item.id, requestTitle: item.title })}
+            style={{ marginBottom: spacing.sm }}
+          >
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <Text variant="body" weight="semibold" style={{ flex: 1 }} numberOfLines={1}>
+                {item.title}
+              </Text>
+              <Badge label={STATUS_LABEL[item.status]} tone={STATUS_TONE[item.status]} />
+            </View>
+            <Text variant="caption" color="secondary" style={{ marginTop: 4 }}>
+              {SPECIALTY_LABELS[item.specialty]} · {item.city} · {formatDate(item.createdAt)}
+            </Text>
+          </Card>
+        )}
+      />
+    </ScreenContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  empty: { alignItems: "center", paddingTop: spacing.xxxl },
+});

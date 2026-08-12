@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ScrollView, View, Pressable, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as boatsApi from "@/api/boats";
-import { colors } from "@/theme/colors";
+import { useTheme } from "@/theme/ThemeContext";
+import { radius, spacing } from "@/theme/tokens";
+import { Text, Button, Input, Header, ScreenContainer, useToast } from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import { ApiError } from "@/api/client";
 import type { BoatType } from "@/types/api";
@@ -17,6 +19,8 @@ const BOAT_TYPES: { value: BoatType; label: string }[] = [
 ];
 
 export function AddBoatScreen({ navigation }: Props) {
+  const { theme } = useTheme();
+  const { show } = useToast();
   const [name, setName] = useState("");
   const [type, setType] = useState<BoatType>("MOTORBOAT");
   const [brand, setBrand] = useState("");
@@ -34,6 +38,7 @@ export function AddBoatScreen({ navigation }: Props) {
         brand: brand.trim() || undefined,
         homePort: homePort.trim() || undefined,
       });
+      show("Tekne eklendi", "success");
       navigation.goBack();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Tekne eklenemedi.");
@@ -43,78 +48,50 @@ export function AddBoatScreen({ navigation }: Props) {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Yeni tekne</Text>
+    <ScreenContainer>
+      <Header title="Yeni Tekne" onBack={() => navigation.goBack()} />
+      <ScrollView contentContainerStyle={{ padding: spacing.lg }} keyboardShouldPersistTaps="handled">
+        <Input label="Tekne Adı" placeholder="ör. Sea Ray 320" value={name} onChangeText={setName} icon="boat-outline" />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Tekne adı"
-        placeholderTextColor={colors.textMuted}
-        value={name}
-        onChangeText={setName}
-      />
+        <Text variant="bodySmall" weight="semibold" color="secondary" style={{ marginBottom: 6 }}>
+          Tip
+        </Text>
+        <View style={styles.typeRow}>
+          {BOAT_TYPES.map((t) => {
+            const active = type === t.value;
+            return (
+              <Pressable
+                key={t.value}
+                onPress={() => setType(t.value)}
+                style={[
+                  styles.chip,
+                  { borderColor: active ? theme.primary : theme.border, backgroundColor: active ? theme.primary : theme.surface },
+                ]}
+              >
+                <Text variant="bodySmall" weight="semibold" style={{ color: active ? theme.onPrimary : theme.textSecondary }}>
+                  {t.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
-      <View style={styles.typeRow}>
-        {BOAT_TYPES.map((t) => (
-          <Pressable
-            key={t.value}
-            style={[styles.typeChip, type === t.value && styles.typeChipActive]}
-            onPress={() => setType(t.value)}
-          >
-            <Text style={type === t.value ? styles.typeChipTextActive : styles.typeChipText}>{t.label}</Text>
-          </Pressable>
-        ))}
-      </View>
+        <Input label="Marka (opsiyonel)" placeholder="ör. Sea Ray" value={brand} onChangeText={setBrand} icon="pricetag-outline" />
+        <Input label="Bağlama Limanı (opsiyonel)" placeholder="ör. Bodrum Marina" value={homePort} onChangeText={setHomePort} icon="location-outline" />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Marka (opsiyonel)"
-        placeholderTextColor={colors.textMuted}
-        value={brand}
-        onChangeText={setBrand}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Bağlama limanı (opsiyonel)"
-        placeholderTextColor={colors.textMuted}
-        value={homePort}
-        onChangeText={setHomePort}
-      />
+        {error ? (
+          <Text variant="bodySmall" color="danger" style={{ marginBottom: spacing.sm }}>
+            {error}
+          </Text>
+        ) : null}
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <Pressable style={styles.button} onPress={handleSubmit} disabled={isSubmitting || !name.trim()}>
-        {isSubmitting ? <ActivityIndicator color={colors.text} /> : <Text style={styles.buttonText}>Kaydet</Text>}
-      </Pressable>
-    </ScrollView>
+        <Button label="Kaydet" onPress={handleSubmit} loading={isSubmitting} disabled={!name.trim()} style={{ marginTop: spacing.xs }} />
+      </ScrollView>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 20 },
-  title: { fontSize: 22, fontWeight: "700", color: colors.text, marginBottom: 20 },
-  input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    padding: 14,
-    color: colors.text,
-    marginBottom: 12,
-  },
-  typeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
-  typeChip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-  },
-  typeChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  typeChipText: { color: colors.textMuted },
-  typeChipTextActive: { color: colors.text, fontWeight: "600" },
-  button: { backgroundColor: colors.primary, borderRadius: 10, padding: 14, alignItems: "center", marginTop: 8 },
-  buttonText: { color: colors.text, fontWeight: "600" },
-  error: { color: colors.danger, marginBottom: 8 },
+  typeRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.sm },
+  chip: { borderWidth: 1.5, borderRadius: radius.pill, paddingVertical: 8, paddingHorizontal: 14 },
 });

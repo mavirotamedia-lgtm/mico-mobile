@@ -17,6 +17,10 @@ type Props = {
   icon?: keyof typeof Ionicons.glyphMap;
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
+  /** Koyu, sabit bir zemin üzerinde (ör. Splash hero) kullanılırken true —
+   * secondary/ghost varyantları theme.primary yerine beyaz tonlarını kullanır,
+   * aksi halde koyu üstüne koyu metin görünmez olurdu. */
+  inverted?: boolean;
 };
 
 export function Button({
@@ -29,26 +33,28 @@ export function Button({
   icon,
   fullWidth = true,
   style,
+  inverted,
 }: Props) {
   const { theme } = useTheme();
   const isDisabled = disabled || loading;
+  const accentOnSurface = inverted ? "#FFFFFF" : theme.primary;
 
   const backgrounds: Record<Variant, string> = {
-    primary: theme.primary,
+    primary: inverted ? "#FFFFFF" : theme.primary,
     secondary: "transparent",
     ghost: "transparent",
     danger: theme.danger,
   };
   const borders: Record<Variant, string | undefined> = {
     primary: undefined,
-    secondary: theme.primary,
+    secondary: accentOnSurface,
     ghost: undefined,
     danger: undefined,
   };
   const textColors: Record<Variant, string> = {
-    primary: theme.onPrimary,
-    secondary: theme.primary,
-    ghost: theme.primary,
+    primary: inverted ? theme.primary : theme.onPrimary,
+    secondary: accentOnSurface,
+    ghost: accentOnSurface,
     danger: theme.onPrimary,
   };
 

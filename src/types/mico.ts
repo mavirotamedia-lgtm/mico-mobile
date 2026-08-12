@@ -1,0 +1,97 @@
+export type CraftsmanSpecialty =
+  | "ENGINE"
+  | "ELECTRICAL"
+  | "HULL_FIBERGLASS"
+  | "UPHOLSTERY_CANVAS"
+  | "WINTERIZATION_MAINTENANCE"
+  | "OTHER";
+
+export const SPECIALTY_LABELS: Record<CraftsmanSpecialty, string> = {
+  ENGINE: "Motor",
+  ELECTRICAL: "Elektrik/Elektronik",
+  HULL_FIBERGLASS: "Fiber/Gövde",
+  UPHOLSTERY_CANVAS: "Döşeme/Branda",
+  WINTERIZATION_MAINTENANCE: "Kışlama/Bakım",
+  OTHER: "Diğer",
+};
+
+export type Craftsman = {
+  id: string;
+  userId: string;
+  businessName: string | null;
+  specialty: CraftsmanSpecialty;
+  bio: string | null;
+  city: string;
+  marina: string | null;
+  experienceYears: number | null;
+  avatar: string | null;
+  isVerified: boolean;
+  status: "PENDING" | "APPROVED" | "SUSPENDED" | "REJECTED";
+  ratingAvg: number;
+  ratingCount: number;
+  createdAt: string;
+};
+
+export type ServiceRequestStatus = "OPEN" | "OFFER_RECEIVED" | "ASSIGNED" | "COMPLETED" | "CANCELLED";
+
+export type ServiceRequest = {
+  id: string;
+  ownerId: string;
+  boatId: string | null;
+  specialty: CraftsmanSpecialty;
+  title: string;
+  description: string;
+  photos: string[];
+  city: string;
+  marina: string | null;
+  isUrgent: boolean;
+  status: ServiceRequestStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateServiceRequestInput = {
+  boatId?: string;
+  specialty: CraftsmanSpecialty;
+  title: string;
+  description: string;
+  city: string;
+  marina?: string;
+  isUrgent?: boolean;
+};
+
+export type ServiceOfferStatus = "PENDING" | "ACCEPTED" | "DECLINED" | "WITHDRAWN";
+
+export type ServiceOffer = {
+  id: string;
+  serviceRequestId: string;
+  craftsmanId: string;
+  message: string | null;
+  priceEstimate: number | null;
+  status: ServiceOfferStatus;
+  contactUnlocked: boolean;
+  createdAt: string;
+  craftsman?: Craftsman;
+};
+
+export type Conversation = {
+  id: string;
+  participantAId: string;
+  participantBId: string;
+  contextType: "DIRECT" | "SERVICE_REQUEST" | "MARKET_LISTING" | "USED_BOAT_LISTING";
+  contextId: string | null;
+  lastMessageAt: string;
+  participantA: { id: string; name: string; email: string };
+  participantB: { id: string; name: string; email: string };
+};
+
+export type Message = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export type Paginated<T> = { items: T[]; page: number; pageSize: number; hasMore: boolean };

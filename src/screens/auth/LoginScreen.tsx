@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAuth } from "@/store/AuthContext";
-import { colors } from "@/theme/colors";
+import { useTheme } from "@/theme/ThemeContext";
+import { palette, spacing } from "@/theme/tokens";
+import { Text, Button, Input } from "@/components/ui";
 import type { AuthStackParamList } from "@/navigation/RootNavigator";
 import { ApiError } from "@/api/client";
 
@@ -10,6 +14,8 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
 export function LoginScreen({ navigation }: Props) {
   const { login } = useAuth();
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,62 +34,83 @@ export function LoginScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Miço</Text>
-      <Text style={styles.subtitle}>Teknenin dijital tayfası</Text>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <View style={[styles.hero, { paddingTop: insets.top + spacing.xl }]}>
+          <View style={styles.brandRow}>
+            <Ionicons name="boat" size={22} color={palette.gold500} />
+            <Text variant="h1" color="onDark" weight="extrabold" style={{ marginLeft: 6 }}>
+              MİÇO
+            </Text>
+          </View>
+          <Text variant="h2" color="onDark" weight="bold" style={{ marginTop: spacing.md }}>
+            Hoş geldin!
+          </Text>
+          <Text variant="bodySmall" color="onDarkMuted" style={{ marginTop: 2 }}>
+            Devam etmek için giriş yap.
+          </Text>
+        </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="E-posta"
-        placeholderTextColor={colors.textMuted}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Şifre"
-        placeholderTextColor={colors.textMuted}
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+        <ScrollView
+          style={[styles.card, { backgroundColor: theme.background }]}
+          contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Input
+            label="E-posta"
+            icon="mail-outline"
+            placeholder="ornek@mail.com"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <Input
+            label="Şifre"
+            icon="lock-closed-outline"
+            placeholder="••••••••"
+            isPassword
+            value={password}
+            onChangeText={setPassword}
+          />
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? (
+            <Text variant="bodySmall" color="danger" style={{ marginBottom: spacing.sm }}>
+              {error}
+            </Text>
+          ) : null}
 
-      <Pressable style={styles.button} onPress={handleSubmit} disabled={isSubmitting}>
-        {isSubmitting ? <ActivityIndicator color={colors.text} /> : <Text style={styles.buttonText}>Giriş yap</Text>}
-      </Pressable>
+          <Button label="Giriş Yap" onPress={handleSubmit} loading={isSubmitting} disabled={!email || !password} style={{ marginTop: spacing.xs }} />
 
-      <Pressable onPress={() => navigation.navigate("Register")}>
-        <Text style={styles.link}>Hesabın yok mu? Kayıt ol</Text>
-      </Pressable>
-    </View>
+          <View style={styles.footerRow}>
+            <Text variant="bodySmall" color="secondary">
+              Hesabın yok mu?
+            </Text>
+            <Text
+              variant="bodySmall"
+              weight="bold"
+              color="accent"
+              style={{ marginLeft: 6 }}
+              onPress={() => navigation.navigate("Register")}
+            >
+              Kayıt ol
+            </Text>
+          </View>
+        </ScrollView>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: 24, justifyContent: "center" },
-  title: { fontSize: 36, fontWeight: "700", color: colors.text, textAlign: "center" },
-  subtitle: { fontSize: 14, color: colors.textMuted, textAlign: "center", marginBottom: 32 },
-  input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    padding: 14,
-    color: colors.text,
-    marginBottom: 12,
+  hero: {
+    backgroundColor: palette.navy950,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxl,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonText: { color: colors.text, fontWeight: "600" },
-  error: { color: colors.danger, marginBottom: 8 },
-  link: { color: colors.primary, textAlign: "center", marginTop: 20 },
+  brandRow: { flexDirection: "row", alignItems: "center" },
+  card: { flex: 1, marginTop: -20, borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+  footerRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.lg },
 });

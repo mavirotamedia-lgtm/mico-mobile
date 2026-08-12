@@ -1,22 +1,22 @@
-import * as SecureStore from "expo-secure-store";
+import { deleteItem, getItem, setItem } from "@/lib/storage";
 
 const ACCESS_KEY = "mico.accessToken";
 const REFRESH_KEY = "mico.refreshToken";
 
 export async function saveTokens(accessToken: string, refreshToken: string) {
-  await SecureStore.setItemAsync(ACCESS_KEY, accessToken);
-  await SecureStore.setItemAsync(REFRESH_KEY, refreshToken);
+  await setItem(ACCESS_KEY, accessToken);
+  await setItem(REFRESH_KEY, refreshToken);
 }
 
 export async function getAccessToken() {
-  return SecureStore.getItemAsync(ACCESS_KEY);
+  return getItem(ACCESS_KEY);
 }
 
 export async function getRefreshToken() {
-  return SecureStore.getItemAsync(REFRESH_KEY);
+  return getItem(REFRESH_KEY);
 }
 
 export async function clearTokens() {
-  await SecureStore.deleteItemAsync(ACCESS_KEY);
-  await SecureStore.deleteItemAsync(REFRESH_KEY);
+  await deleteItem(ACCESS_KEY);
+  await deleteItem(REFRESH_KEY);
 }
