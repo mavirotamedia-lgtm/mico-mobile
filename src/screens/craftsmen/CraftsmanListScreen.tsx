@@ -13,6 +13,8 @@ import { SPECIALTY_LABELS, type CraftsmanSpecialty } from "@/types/mico";
 type Props = NativeStackScreenProps<AppStackParamList, "CraftsmanList">;
 
 const SPECIALTIES = Object.entries(SPECIALTY_LABELS) as [CraftsmanSpecialty, string][];
+// [deger, etiket] sirasi SPECIALTIES ile ayni tutuluyor — "Tumu" filtresi icin deger yok (undefined).
+const CATEGORY_FILTERS: [CraftsmanSpecialty | undefined, string][] = [[undefined, "Tümü"], ...SPECIALTIES];
 
 export function CraftsmanListScreen({ navigation }: Props) {
   const { theme } = useTheme();
@@ -41,11 +43,11 @@ export function CraftsmanListScreen({ navigation }: Props) {
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
-        data={[["Tümü", undefined], ...SPECIALTIES] as [string, CraftsmanSpecialty | undefined][]}
-        keyExtractor={([label]) => label}
+        data={CATEGORY_FILTERS}
+        keyExtractor={([, label]) => label}
         contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.xs, paddingBottom: spacing.sm }}
         style={{ flexGrow: 0 }}
-        renderItem={({ item: [label, value] }) => {
+        renderItem={({ item: [value, label] }) => {
           const active = specialty === value;
           return (
             <Pressable
