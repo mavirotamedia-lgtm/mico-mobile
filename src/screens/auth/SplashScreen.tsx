@@ -42,10 +42,9 @@ export function SplashScreen({ navigation }: Props) {
 
       <View style={[styles.content, { paddingTop: insets.top + spacing.xxl, paddingBottom: insets.bottom + spacing.xl }]}>
         <Animated.View style={{ opacity: brandOpacity, alignItems: "center" }}>
-          <Text variant="display" color="onDark" weight="extrabold" style={styles.wordmark}>
-            MİÇO
-          </Text>
-          <Text variant="body" color="onDark" weight="semibold" style={{ marginTop: 4 }}>
+          <Image source={require("../../../assets/branding/logo-icon.png")} style={styles.logoIcon} resizeMode="contain" />
+          <Image source={require("../../../assets/branding/logo-wordmark.png")} style={styles.logoWordmark} resizeMode="contain" />
+          <Text variant="body" color="onDark" weight="semibold" style={{ marginTop: spacing.sm }}>
             Denizde yalnız değilsin.
           </Text>
         </Animated.View>
@@ -61,5 +60,6 @@ export function SplashScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   content: { flex: 1, justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing.xl },
-  wordmark: { fontSize: 44, letterSpacing: 1 },
+  logoIcon: { width: 96, height: 96 },
+  logoWordmark: { width: 190, height: 67, marginTop: spacing.sm },
 });

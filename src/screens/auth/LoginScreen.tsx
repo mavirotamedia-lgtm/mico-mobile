@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
@@ -47,12 +46,8 @@ export function LoginScreen({ navigation }: Props) {
         >
           <View style={[styles.card, { backgroundColor: theme.surface, shadowColor: palette.navy950 }]}>
             <View style={styles.brandRow}>
-              <View style={[styles.brandIcon, { borderColor: theme.primary }]}>
-                <Ionicons name="boat" size={16} color={theme.primary} />
-              </View>
-              <Text variant="h1" weight="extrabold" style={{ marginLeft: 6 }}>
-                MİÇO
-              </Text>
+              <Image source={require("../../../assets/branding/logo-icon.png")} style={styles.brandIcon} resizeMode="contain" />
+              <Image source={require("../../../assets/branding/logo-wordmark.png")} style={styles.brandWordmark} resizeMode="contain" />
             </View>
 
             <Text variant="h2" weight="bold" style={{ marginTop: spacing.lg, textAlign: "center" }}>
@@ -122,13 +117,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "center" },
-  brandIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  brandIcon: { width: 32, height: 32 },
+  brandWordmark: { width: 78, height: 28, marginLeft: 6 },
   footerRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.lg },
 });
