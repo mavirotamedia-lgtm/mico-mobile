@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, View, StyleSheet, Image, Pressable } from "react-native";
+import { ActivityIndicator, ScrollView, View, StyleSheet, Image } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import type { CompositeScreenProps } from "@react-navigation/native";
@@ -7,8 +7,8 @@ import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
-import { spacing, radius } from "@/theme/tokens";
-import { Text, Card, Rating, Badge, Avatar, ScreenContainer, useToast } from "@/components/ui";
+import { spacing, radius, palette } from "@/theme/tokens";
+import { Text, Card, Rating, Badge, Avatar, ScreenContainer, Touchable, useToast } from "@/components/ui";
 import * as boatsApi from "@/api/boats";
 import * as craftsmenApi from "@/api/craftsmen";
 import { ApiError } from "@/api/client";
@@ -22,12 +22,6 @@ type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, "Home">,
   NativeStackScreenProps<AppStackParamList>
 >;
-
-const QUICK_ACTIONS: { icon: keyof typeof Ionicons.glyphMap; label: string; target: keyof AppStackParamList | "MyBoat" | "ServiceRequests" }[] = [
-  { icon: "construct-outline", label: "Servis Bul", target: "CraftsmanList" },
-  { icon: "boat-outline", label: "Teknem", target: "MyBoat" },
-  { icon: "pricetag-outline", label: "Teklifler", target: "ServiceRequests" },
-];
 
 export function HomeScreen({ navigation }: Props) {
   const { user } = useAuth();
@@ -55,6 +49,18 @@ export function HomeScreen({ navigation }: Props) {
     }, [load])
   );
 
+  // Ustanin bir teknesi varsa "Bakim Takibi" dogrudan o teknenin detayina
+  // gider (bakim gecmisi orada) — teknesi yoksa once tekne eklemeye yonlendirir.
+  const quickActions: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }[] = [
+    { icon: "construct-outline", label: "Servis Bul", onPress: () => navigation.navigate("CraftsmanList") },
+    {
+      icon: "time-outline",
+      label: "Bakım Takibi",
+      onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
+    },
+    { icon: "pricetag-outline", label: "Teklifler", onPress: () => navigation.navigate("ServiceRequests") },
+  ];
+
   if (isInitialLoading) {
     return (
       <ScreenContainer>
@@ -67,29 +73,23 @@ export function HomeScreen({ navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxl }}>
-        <View style={[styles.header, { paddingHorizontal: spacing.lg }]}>
-          <View>
-            <Text variant="bodySmall" color="secondary">
-              Merhaba,
+      <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxl }} showsVerticalScrollIndicator={false}>
+        <View style={[styles.hero, { backgroundColor: palette.navy950 }]}>
+          <View style={styles.headerRow}>
+            <Text variant="h1" color="onDark" weight="bold">
+              Merhaba, {user?.name?.split(" ")[0] ?? "Kaptan"}
             </Text>
-            <Text variant="h1" weight="bold">
-              {user?.name ?? "Kaptan"}
-            </Text>
+            <View style={styles.bellButton}>
+              <Ionicons name="notifications-outline" size={20} color={theme.textOnDark} />
+            </View>
           </View>
-          <View style={[styles.bellButton, { backgroundColor: theme.surfaceAlt }]}>
-            <Ionicons name="notifications-outline" size={20} color={theme.textPrimary} />
-          </View>
-        </View>
 
-        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
           {boat ? (
-            <Card onPress={() => navigation.navigate("BoatDetail", { boatId: boat.id })} style={{ padding: 0, overflow: "hidden" }}>
-              <View style={{ flexDirection: "row" }}>
-                <Image
-                  source={{ uri: boat.image ?? "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=400&q=60" }}
-                  style={{ width: 96, height: 96 }}
-                />
+            <Card
+              onPress={() => navigation.navigate("BoatDetail", { boatId: boat.id })}
+              style={{ padding: 0, overflow: "hidden", marginTop: spacing.lg }}
+            >
+              <View style={{ flexDirection: "row", height: 96 }}>
                 <View style={{ flex: 1, padding: spacing.md, justifyContent: "center" }}>
                   <Text variant="caption" color="secondary">
                     Teknem
@@ -103,11 +103,14 @@ export function HomeScreen({ navigation }: Props) {
                     </Text>
                   ) : null}
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} style={{ alignSelf: "center", marginRight: spacing.md }} />
+                <Image
+                  source={{ uri: boat.image ?? "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=400&q=60" }}
+                  style={{ width: 130, height: "100%" }}
+                />
               </View>
             </Card>
           ) : (
-            <Card onPress={() => navigation.navigate("AddBoat")}>
+            <Card onPress={() => navigation.navigate("AddBoat")} style={{ marginTop: spacing.lg }}>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Ionicons name="add-circle-outline" size={28} color={theme.primary} />
                 <View style={{ marginLeft: spacing.sm }}>
@@ -126,23 +129,21 @@ export function HomeScreen({ navigation }: Props) {
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
           <SectionTitle>Hızlı İşlemler</SectionTitle>
           <View style={styles.quickRow}>
-            {QUICK_ACTIONS.map((action) => (
-              <Pressable
+            {quickActions.map((action) => (
+              <Touchable
                 key={action.label}
-                style={[styles.quickItem, { backgroundColor: theme.surface, borderColor: theme.border }]}
-                onPress={() =>
-                  action.target === "MyBoat" || action.target === "ServiceRequests"
-                    ? navigation.navigate(action.target)
-                    : navigation.navigate(action.target as "CraftsmanList")
-                }
+                haptic
+                scaleTo={0.95}
+                onPress={action.onPress}
+                style={[styles.quickItem, { backgroundColor: theme.surface, borderColor: theme.border, shadowColor: theme.shadowColor }]}
               >
                 <View style={[styles.quickIcon, { backgroundColor: theme.surfaceAlt }]}>
-                  <Ionicons name={action.icon} size={20} color={theme.primary} />
+                  <Ionicons name={action.icon} size={22} color={theme.primary} />
                 </View>
-                <Text variant="caption" weight="semibold" style={{ marginTop: 6, textAlign: "center" }}>
+                <Text variant="caption" weight="semibold" style={{ marginTop: spacing.xs, textAlign: "center" }}>
                   {action.label}
                 </Text>
-              </Pressable>
+              </Touchable>
             ))}
           </View>
         </View>
@@ -168,12 +169,15 @@ export function HomeScreen({ navigation }: Props) {
                 onPress={() => navigation.navigate("CraftsmanDetail", { craftsmanId: c.id })}
                 style={{ flexDirection: "row", alignItems: "center", marginBottom: spacing.sm }}
               >
-                <Avatar name={c.businessName ?? "Usta"} uri={c.avatar} size={44} />
+                <Avatar name={c.businessName ?? "Usta"} uri={c.avatar} size={52} />
                 <View style={{ marginLeft: spacing.sm, flex: 1 }}>
                   <Text variant="body" weight="semibold" numberOfLines={1}>
                     {c.businessName ?? SPECIALTY_LABELS[c.specialty]}
                   </Text>
                   <Rating value={c.ratingAvg} count={c.ratingCount} />
+                  <Text variant="caption" color="secondary" numberOfLines={1} style={{ marginTop: 2 }}>
+                    {c.city}
+                  </Text>
                 </View>
                 <Badge label={SPECIALTY_LABELS[c.specialty]} tone="neutral" />
               </Card>
@@ -195,10 +199,34 @@ function SectionTitle({ children }: { children: string }) {
 
 const styles = StyleSheet.create({
   centerFill: { flex: 1, alignItems: "center", justifyContent: "center" },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: spacing.lg },
-  bellButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  hero: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+  },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  bellButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.12)",
+  },
   quickRow: { flexDirection: "row", gap: spacing.sm },
-  quickItem: { flex: 1, alignItems: "center", padding: spacing.sm, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth },
-  quickIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  quickItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 1,
+  },
+  quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   sectionHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
 });
