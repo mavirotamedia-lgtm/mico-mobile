@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { FlatList, View, StyleSheet, RefreshControl } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -43,6 +44,7 @@ function formatDate(iso: string) {
 export function MyServiceRequestsScreen({ navigation }: Props) {
   const { theme } = useTheme();
   const { show } = useToast();
+  const insets = useSafeAreaInsets();
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -66,7 +68,7 @@ export function MyServiceRequestsScreen({ navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.sm }}>
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: insets.top + spacing.sm, paddingBottom: spacing.sm }}>
         <Text variant="h1" weight="bold">
           Teklifler
         </Text>

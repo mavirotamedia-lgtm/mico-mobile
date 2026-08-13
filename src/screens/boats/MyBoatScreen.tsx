@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { FlatList, View, StyleSheet, Image, RefreshControl } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -31,6 +32,7 @@ const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1567899378494-47b22a2a
 export function MyBoatScreen({ navigation }: Props) {
   const { theme } = useTheme();
   const { show } = useToast();
+  const insets = useSafeAreaInsets();
   const [boats, setBoats] = useState<Boat[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -53,7 +55,7 @@ export function MyBoatScreen({ navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.sm }}>
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: insets.top + spacing.sm, paddingBottom: spacing.sm }}>
         <Text variant="h1" weight="bold">
           Teknem
         </Text>

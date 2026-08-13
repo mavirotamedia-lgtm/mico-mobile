@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, View, StyleSheet, Image } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
@@ -27,6 +28,7 @@ export function HomeScreen({ navigation }: Props) {
   const { user } = useAuth();
   const { theme } = useTheme();
   const { show } = useToast();
+  const insets = useSafeAreaInsets();
   const [boat, setBoat] = useState<Boat | null>(null);
   const [craftsmen, setCraftsmen] = useState<Craftsman[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -74,7 +76,7 @@ export function HomeScreen({ navigation }: Props) {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxl }} showsVerticalScrollIndicator={false}>
-        <View style={[styles.hero, { backgroundColor: palette.navy950 }]}>
+        <View style={[styles.hero, { backgroundColor: palette.navy950, paddingTop: insets.top + spacing.sm }]}>
           <View style={styles.headerRow}>
             <Text variant="h1" color="onDark" weight="bold">
               Merhaba, {user?.name?.split(" ")[0] ?? "Kaptan"}

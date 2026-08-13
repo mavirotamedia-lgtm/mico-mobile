@@ -1,4 +1,5 @@
-import { View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -6,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
-import { Text, Card, Avatar, ScreenContainer } from "@/components/ui";
+import { Text, Card, Avatar, ScreenContainer, Touchable } from "@/components/ui";
 import type { MainTabParamList } from "@/navigation/MainTabs";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 
@@ -18,6 +19,7 @@ type Props = CompositeScreenProps<
 export function ProfileScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
   const { theme, preference, setPreference } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const menuItems: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }[] = [
     { icon: "boat-outline", label: "Teknelerim", onPress: () => navigation.navigate("MyBoat") },
@@ -33,7 +35,7 @@ export function ProfileScreen({ navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <View style={{ padding: spacing.lg }}>
+      <View style={{ padding: spacing.lg, paddingTop: insets.top + spacing.sm }}>
         <Text variant="h1" weight="bold" style={{ marginBottom: spacing.md }}>
           Profil
         </Text>
@@ -55,9 +57,11 @@ export function ProfileScreen({ navigation }: Props) {
         </Text>
         <Card style={{ padding: 0 }}>
           {menuItems.map((item, index) => (
-            <Pressable
+            <Touchable
               key={item.label}
               onPress={item.onPress}
+              haptic
+              scaleTo={0.98}
               style={[
                 styles.menuRow,
                 index < menuItems.length - 1 && { borderBottomColor: theme.border, borderBottomWidth: StyleSheet.hairlineWidth },
@@ -68,7 +72,7 @@ export function ProfileScreen({ navigation }: Props) {
                 {item.label}
               </Text>
               <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
-            </Pressable>
+            </Touchable>
           ))}
         </Card>
 
@@ -79,28 +83,27 @@ export function ProfileScreen({ navigation }: Props) {
           {themeOptions.map((opt) => {
             const active = preference === opt.key;
             return (
-              <Pressable
+              <Touchable
                 key={opt.key}
                 onPress={() => setPreference(opt.key)}
-                style={[
-                  styles.themeOption,
-                  { backgroundColor: active ? theme.primary : "transparent" },
-                ]}
+                haptic
+                scaleTo={0.95}
+                style={[styles.themeOption, { backgroundColor: active ? theme.primary : "transparent" }]}
               >
                 <Text variant="bodySmall" weight="semibold" style={{ color: active ? theme.onPrimary : theme.textSecondary }}>
                   {opt.label}
                 </Text>
-              </Pressable>
+              </Touchable>
             );
           })}
         </Card>
 
-        <Pressable onPress={logout} style={styles.logoutRow}>
+        <Touchable onPress={logout} haptic style={styles.logoutRow}>
           <Ionicons name="log-out-outline" size={20} color={theme.danger} />
           <Text variant="body" weight="semibold" color="danger" style={{ marginLeft: spacing.sm }}>
             Çıkış Yap
           </Text>
-        </Pressable>
+        </Touchable>
       </View>
     </ScreenContainer>
   );
