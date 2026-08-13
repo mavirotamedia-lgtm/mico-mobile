@@ -130,7 +130,7 @@ export function HomeScreen({ navigation }: Props) {
         >
           <Reveal>
             <View style={styles.headerRow}>
-              <Text variant="h1" color="onDark" weight="bold">
+              <Text variant="display" color="onDark" weight="extrabold" style={{ fontSize: 26, lineHeight: 32 }}>
                 Merhaba, {user?.name?.split(" ")[0] ?? "Kaptan"}
               </Text>
               <View style={styles.bellButton}>
@@ -143,12 +143,12 @@ export function HomeScreen({ navigation }: Props) {
                 onPress={() => navigation.navigate("BoatDetail", { boatId: boat.id })}
                 style={{ padding: 0, overflow: "hidden", marginTop: spacing.lg }}
               >
-                <View style={{ flexDirection: "row", height: 96 }}>
+                <View style={{ flexDirection: "row", height: 104 }}>
                   <View style={{ flex: 1, padding: spacing.md, justifyContent: "center" }}>
                     <Text variant="caption" color="secondary">
                       Teknem
                     </Text>
-                    <Text variant="h2" weight="bold" numberOfLines={1}>
+                    <Text variant="h1" weight="extrabold" numberOfLines={1}>
                       {boat.name}
                     </Text>
                     {boat.homePort ? (
@@ -211,8 +211,8 @@ export function HomeScreen({ navigation }: Props) {
                     <Ionicons name={action.icon} size={22} color={action.primary ? theme.onPrimary : theme.primary} />
                   </View>
                   <Text
-                    variant="caption"
-                    weight="semibold"
+                    variant="bodySmall"
+                    weight="bold"
                     style={{ marginTop: spacing.xs, textAlign: "center", color: action.primary ? theme.onPrimary : theme.textPrimary }}
                   >
                     {action.label}
@@ -275,7 +275,7 @@ export function HomeScreen({ navigation }: Props) {
 
 function SectionTitle({ children }: { children: string }) {
   return (
-    <Text variant="h2" weight="bold" style={{ marginBottom: spacing.sm }}>
+    <Text variant="h1" weight="extrabold" style={{ marginBottom: spacing.sm }}>
       {children}
     </Text>
   );
