@@ -10,6 +10,7 @@ import { spacing } from "@/theme/tokens";
 import { Text, Card, Badge, Button, Input, Header, Modal, ScreenContainer, useToast } from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { Boat, MaintenanceRecord } from "@/types/api";
+import { ApiError } from "@/api/client";
 
 type Props = NativeStackScreenProps<AppStackParamList, "BoatDetail">;
 
@@ -31,13 +32,17 @@ export function BoatDetailScreen({ route, navigation }: Props) {
   const [isSaving, setIsSaving] = useState(false);
 
   const load = useCallback(async () => {
-    const [boatData, maintenanceData] = await Promise.all([
-      boatsApi.getBoat(boatId),
-      maintenanceApi.listMaintenance(boatId),
-    ]);
-    setBoat(boatData);
-    setRecords(maintenanceData);
-  }, [boatId]);
+    try {
+      const [boatData, maintenanceData] = await Promise.all([
+        boatsApi.getBoat(boatId),
+        maintenanceApi.listMaintenance(boatId),
+      ]);
+      setBoat(boatData);
+      setRecords(maintenanceData);
+    } catch (e) {
+      show(e instanceof ApiError ? e.message : "Tekne bilgileri yüklenemedi.", "error");
+    }
+  }, [boatId, show]);
 
   useFocusEffect(
     useCallback(() => {
@@ -59,6 +64,8 @@ export function BoatDetailScreen({ route, navigation }: Props) {
       setIsAdding(false);
       show("Bakım kaydı eklendi", "success");
       load();
+    } catch (e) {
+      show(e instanceof ApiError ? e.message : "Bakım kaydı eklenemedi.", "error");
     } finally {
       setIsSaving(false);
     }

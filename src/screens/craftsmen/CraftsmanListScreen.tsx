@@ -5,10 +5,11 @@ import { Ionicons } from "@expo/vector-icons";
 import * as craftsmenApi from "@/api/craftsmen";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
-import { Text, Card, Avatar, Rating, Badge, Header, ScreenContainer } from "@/components/ui";
+import { Text, Card, Avatar, Rating, Badge, Header, ScreenContainer, useToast } from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { Craftsman } from "@/types/mico";
 import { SPECIALTY_LABELS, type CraftsmanSpecialty } from "@/types/mico";
+import { ApiError } from "@/api/client";
 
 type Props = NativeStackScreenProps<AppStackParamList, "CraftsmanList">;
 
@@ -18,6 +19,7 @@ const CATEGORY_FILTERS: [CraftsmanSpecialty | undefined, string][] = [[undefined
 
 export function CraftsmanListScreen({ navigation }: Props) {
   const { theme } = useTheme();
+  const { show } = useToast();
   const [craftsmen, setCraftsmen] = useState<Craftsman[]>([]);
   const [specialty, setSpecialty] = useState<CraftsmanSpecialty | undefined>();
   const [isLoading, setIsLoading] = useState(false);
@@ -27,10 +29,12 @@ export function CraftsmanListScreen({ navigation }: Props) {
     try {
       const res = await craftsmenApi.listCraftsmen(specialty ? { specialty } : {});
       setCraftsmen(res.items);
+    } catch (e) {
+      show(e instanceof ApiError ? e.message : "Ustalar yüklenemedi.", "error");
     } finally {
       setIsLoading(false);
     }
-  }, [specialty]);
+  }, [specialty, show]);
 
   useEffect(() => {
     load();

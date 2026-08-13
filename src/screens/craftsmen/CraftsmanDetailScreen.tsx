@@ -19,10 +19,14 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
   const { theme } = useTheme();
   const { show } = useToast();
   const [craftsman, setCraftsman] = useState<Craftsman | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isMessaging, setIsMessaging] = useState(false);
 
   useEffect(() => {
-    craftsmenApi.getCraftsman(craftsmanId).then(setCraftsman);
+    craftsmenApi
+      .getCraftsman(craftsmanId)
+      .then(setCraftsman)
+      .catch((e) => setLoadError(e instanceof ApiError ? e.message : "Usta profili yüklenemedi."));
   }, [craftsmanId]);
 
   async function handleMessage() {
@@ -79,6 +83,10 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
               style={{ marginTop: spacing.lg }}
             />
           </>
+        ) : loadError ? (
+          <Text variant="body" color="danger">
+            {loadError}
+          </Text>
         ) : (
           <Text variant="body" color="secondary">
             Yükleniyor...

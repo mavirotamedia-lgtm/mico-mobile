@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import * as authApi from "@/api/auth";
 import { getAccessToken } from "@/api/session";
+import { onAuthFailure } from "@/api/client";
 import type { PublicUser } from "@/types/api";
 
 type AuthContextValue = {
@@ -33,6 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })();
   }, []);
+
+  // Access + refresh token ikisi de gecersiz hale geldiginde (30 gunluk
+  // refresh suresi doldu, sunucuda oturum silindi vb.) api/client.ts bunu
+  // bildirir; kullanici burada oturumdan dusurulup Login ekranina yonlenir.
+  useEffect(() => onAuthFailure(() => setUser(null)), []);
 
   const value = useMemo<AuthContextValue>(
     () => ({

@@ -7,9 +7,10 @@ import * as conversationsApi from "@/api/conversations";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
-import { Text, Avatar, Header, ScreenContainer } from "@/components/ui";
+import { Text, Avatar, Header, ScreenContainer, useToast } from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { Message } from "@/types/mico";
+import { ApiError } from "@/api/client";
 
 type Props = NativeStackScreenProps<AppStackParamList, "Chat">;
 
@@ -23,15 +24,21 @@ export function ChatScreen({ route, navigation }: Props) {
   const { conversationId, otherUserName } = route.params;
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { show } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const load = useCallback(async () => {
-    const res = await conversationsApi.listMessages(conversationId);
-    // API en yeniyi önce döner (DESC) — sohbet ekranında eskiden yeniye gösterilir.
-    setMessages([...res.items].reverse());
+    try {
+      const res = await conversationsApi.listMessages(conversationId);
+      // API en yeniyi önce döner (DESC) — sohbet ekranında eskiden yeniye gösterilir.
+      setMessages([...res.items].reverse());
+    } catch {
+      // Polling sirasinda gecici bir ag hatasi kullaniciyi rahatsiz etmesin —
+      // bir sonraki interval'de sessizce tekrar denenir.
+    }
   }, [conversationId]);
 
   useFocusEffect(
@@ -47,11 +54,15 @@ export function ChatScreen({ route, navigation }: Props) {
   async function handleSend() {
     const body = draft.trim();
     if (!body) return;
-    setDraft("");
     setIsSending(true);
     try {
       await conversationsApi.sendMessage(conversationId, body);
+      setDraft("");
       load();
+    } catch (e) {
+      // Yazilan metni SILME — gonderim basarisiz oldu, kullanici tekrar
+      // deneyebilsin diye taslak korunuyor.
+      show(e instanceof ApiError ? e.message : "Mesaj gönderilemedi.", "error");
     } finally {
       setIsSending(false);
     }

@@ -59,10 +59,12 @@ export function OffersScreen({ route, navigation }: Props) {
         })
       );
       setOffers(withCraftsmen);
+    } catch (e) {
+      show(e instanceof ApiError ? e.message : "Teklifler yüklenemedi.", "error");
     } finally {
       setIsLoading(false);
     }
-  }, [serviceRequestId]);
+  }, [serviceRequestId, show]);
 
   useFocusEffect(
     useCallback(() => {

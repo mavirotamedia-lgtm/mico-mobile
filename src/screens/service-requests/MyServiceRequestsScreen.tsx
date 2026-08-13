@@ -8,11 +8,12 @@ import { Ionicons } from "@expo/vector-icons";
 import * as serviceRequestsApi from "@/api/serviceRequests";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
-import { Text, Card, Badge, ScreenContainer } from "@/components/ui";
+import { Text, Card, Badge, ScreenContainer, useToast } from "@/components/ui";
 import type { MainTabParamList } from "@/navigation/MainTabs";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { ServiceRequest, ServiceRequestStatus } from "@/types/mico";
 import { SPECIALTY_LABELS } from "@/types/mico";
+import { ApiError } from "@/api/client";
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, "ServiceRequests">,
@@ -41,6 +42,7 @@ function formatDate(iso: string) {
 
 export function MyServiceRequestsScreen({ navigation }: Props) {
   const { theme } = useTheme();
+  const { show } = useToast();
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -49,10 +51,12 @@ export function MyServiceRequestsScreen({ navigation }: Props) {
     try {
       const res = await serviceRequestsApi.listMyServiceRequests();
       setRequests(res.items);
+    } catch (e) {
+      show(e instanceof ApiError ? e.message : "Servis talepleri yüklenemedi.", "error");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [show]);
 
   useFocusEffect(
     useCallback(() => {

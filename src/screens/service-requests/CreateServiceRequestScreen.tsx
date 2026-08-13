@@ -29,14 +29,19 @@ export function CreateServiceRequestScreen({ route, navigation }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    // Bilerek sadece mount'ta bir kez calisir — boatId'yi bagimliliga eklemek
+    // kullanici bir tekne cip'ine her dokundugunda gereksiz yere tekne
+    // listesini yeniden cekiyordu.
     boatsApi.listBoats().then((list) => {
       setBoats(list);
-      if (!boatId && list[0]) {
-        setBoatId(list[0].id);
+      setBoatId((current) => {
+        if (current || !list[0]) return current;
         if (list[0].homePort) setCity(list[0].homePort);
-      }
+        return list[0].id;
+      });
     });
-  }, [boatId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit() {
     setError(null);

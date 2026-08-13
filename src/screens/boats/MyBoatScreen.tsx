@@ -6,10 +6,11 @@ import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import * as boatsApi from "@/api/boats";
-import { Text, Card, Button, ScreenContainer } from "@/components/ui";
+import { Text, Card, Button, ScreenContainer, useToast } from "@/components/ui";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
 import type { Boat } from "@/types/api";
+import { ApiError } from "@/api/client";
 import type { MainTabParamList } from "@/navigation/MainTabs";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 
@@ -29,6 +30,7 @@ const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1567899378494-47b22a2a
 
 export function MyBoatScreen({ navigation }: Props) {
   const { theme } = useTheme();
+  const { show } = useToast();
   const [boats, setBoats] = useState<Boat[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -36,10 +38,12 @@ export function MyBoatScreen({ navigation }: Props) {
     setIsRefreshing(true);
     try {
       setBoats(await boatsApi.listBoats());
+    } catch (e) {
+      show(e instanceof ApiError ? e.message : "Tekneler yüklenemedi.", "error");
     } finally {
       setIsRefreshing(false);
     }
-  }, []);
+  }, [show]);
 
   useFocusEffect(
     useCallback(() => {

@@ -14,6 +14,17 @@ export class ApiError extends Error {
   }
 }
 
+// AuthContext bunu abone olup oturumun (refresh de dahil) tamamen geçersiz
+// hale geldiği anı öğrenir ve kullanıcıyı Login ekranına düşürür — apiRequest
+// React dışında çalıştığı için context state'ini doğrudan güncelleyemez.
+type AuthFailureListener = () => void;
+const authFailureListeners = new Set<AuthFailureListener>();
+
+export function onAuthFailure(listener: AuthFailureListener): () => void {
+  authFailureListeners.add(listener);
+  return () => authFailureListeners.delete(listener);
+}
+
 async function rawRequest<T>(path: string, init: RequestInit, accessToken: string | null): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
@@ -36,21 +47,38 @@ async function rawRequest<T>(path: string, init: RequestInit, accessToken: strin
 
 // 401 alınırsa refresh token ile bir kez daha denenir; API'nin auth/refresh
 // rotasyon davranışıyla (mavirotamarine-site src/modules/auth/service.ts) uyumlu.
+// Eşzamanlı birden fazla istek aynı anda 401 alırsa (ör. bir ekranın
+// Promise.all ile attığı paralel çağrılar) hepsi TEK bir refresh çağrısını
+// paylaşır — aksi halde ikinci çağrı, ilki tarafından zaten rotasyona
+// uğratılmış (tüketilmiş) refresh token'ı kullanmaya çalışıp haksız yere
+// oturumu sonlandırırdı.
+let inFlightRefresh: Promise<string | null> | null = null;
+
 async function refreshSession(): Promise<string | null> {
-  const refreshToken = await getRefreshToken();
-  if (!refreshToken) return null;
+  if (inFlightRefresh) return inFlightRefresh;
+
+  inFlightRefresh = (async () => {
+    const refreshToken = await getRefreshToken();
+    if (!refreshToken) return null;
+
+    try {
+      const result = await rawRequest<AuthResult>(
+        "/auth/refresh",
+        { method: "POST", body: JSON.stringify({ refreshToken }) },
+        null
+      );
+      await saveTokens(result.accessToken, result.refreshToken);
+      return result.accessToken;
+    } catch {
+      await clearTokens();
+      return null;
+    }
+  })();
 
   try {
-    const result = await rawRequest<AuthResult>(
-      "/auth/refresh",
-      { method: "POST", body: JSON.stringify({ refreshToken }) },
-      null
-    );
-    await saveTokens(result.accessToken, result.refreshToken);
-    return result.accessToken;
-  } catch {
-    await clearTokens();
-    return null;
+    return await inFlightRefresh;
+  } finally {
+    inFlightRefresh = null;
   }
 }
 
@@ -65,6 +93,9 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
       if (accessToken) {
         return rawRequest<T>(path, init, accessToken);
       }
+      // Refresh de basarisiz oldu: oturum gercekten bitti, dinleyicileri
+      // (AuthContext) haberdar et ki kullanici Login ekranina dussun.
+      authFailureListeners.forEach((listener) => listener());
     }
     throw error;
   }

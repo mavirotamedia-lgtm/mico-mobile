@@ -8,9 +8,10 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing, radius } from "@/theme/tokens";
-import { Text, Card, Rating, Badge, Avatar, ScreenContainer } from "@/components/ui";
+import { Text, Card, Rating, Badge, Avatar, ScreenContainer, useToast } from "@/components/ui";
 import * as boatsApi from "@/api/boats";
 import * as craftsmenApi from "@/api/craftsmen";
+import { ApiError } from "@/api/client";
 import type { Boat } from "@/types/api";
 import type { Craftsman } from "@/types/mico";
 import { SPECIALTY_LABELS } from "@/types/mico";
@@ -31,14 +32,19 @@ const QUICK_ACTIONS: { icon: keyof typeof Ionicons.glyphMap; label: string; targ
 export function HomeScreen({ navigation }: Props) {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { show } = useToast();
   const [boat, setBoat] = useState<Boat | null>(null);
   const [craftsmen, setCraftsmen] = useState<Craftsman[]>([]);
 
   const load = useCallback(async () => {
-    const [boats, craftsmenRes] = await Promise.all([boatsApi.listBoats(), craftsmenApi.listCraftsmen()]);
-    setBoat(boats[0] ?? null);
-    setCraftsmen(craftsmenRes.items.slice(0, 4));
-  }, []);
+    try {
+      const [boats, craftsmenRes] = await Promise.all([boatsApi.listBoats(), craftsmenApi.listCraftsmen()]);
+      setBoat(boats[0] ?? null);
+      setCraftsmen(craftsmenRes.items.slice(0, 4));
+    } catch (e) {
+      show(e instanceof ApiError ? e.message : "Ana sayfa yüklenemedi.", "error");
+    }
+  }, [show]);
 
   useFocusEffect(
     useCallback(() => {
@@ -58,9 +64,9 @@ export function HomeScreen({ navigation }: Props) {
               {user?.name ?? "Kaptan"}
             </Text>
           </View>
-          <Pressable style={[styles.bellButton, { backgroundColor: theme.surfaceAlt }]} hitSlop={8}>
+          <View style={[styles.bellButton, { backgroundColor: theme.surfaceAlt }]}>
             <Ionicons name="notifications-outline" size={20} color={theme.textPrimary} />
-          </Pressable>
+          </View>
         </View>
 
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
