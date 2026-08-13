@@ -11,3 +11,5 @@ export { Modal } from "@/components/ui/Modal";
 export { ToastProvider, useToast } from "@/components/ui/Toast";
 export { ScreenContainer } from "@/components/ui/ScreenContainer";
 export { Touchable } from "@/components/ui/Touchable";
+export { Reveal } from "@/components/ui/Reveal";
+export { Skeleton } from "@/components/ui/Skeleton";
