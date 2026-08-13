@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from "react";
-import { FlatList, View, StyleSheet, KeyboardAvoidingView, Platform, Pressable, TextInput } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, FlatList, View, StyleSheet, KeyboardAvoidingView, Platform, TextInput } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,7 +7,7 @@ import * as conversationsApi from "@/api/conversations";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
-import { Text, Avatar, Header, ScreenContainer, useToast } from "@/components/ui";
+import { Text, Avatar, Header, ScreenContainer, Touchable, useToast } from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { Message } from "@/types/mico";
 import { ApiError } from "@/api/client";
@@ -26,9 +26,12 @@ export function ChatScreen({ route, navigation }: Props) {
   const { theme } = useTheme();
   const { show } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const listRef = useRef<FlatList<Message>>(null);
+  const lastMessageCount = useRef(0);
 
   const load = useCallback(async () => {
     try {
@@ -38,6 +41,8 @@ export function ChatScreen({ route, navigation }: Props) {
     } catch {
       // Polling sirasinda gecici bir ag hatasi kullaniciyi rahatsiz etmesin —
       // bir sonraki interval'de sessizce tekrar denenir.
+    } finally {
+      setIsLoading(false);
     }
   }, [conversationId]);
 
@@ -50,6 +55,16 @@ export function ChatScreen({ route, navigation }: Props) {
       };
     }, [load])
   );
+
+  // Yeni mesaj geldiginde (kendi gonderdigimiz ya da karsi tarafinki, polling
+  // ile) sohbeti otomatik en alta kaydir — sohbet ekranlarinda beklenen
+  // davranis, oncesinde eksikti.
+  useEffect(() => {
+    if (messages.length > lastMessageCount.current) {
+      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+    }
+    lastMessageCount.current = messages.length;
+  }, [messages]);
 
   async function handleSend() {
     const body = draft.trim();
@@ -73,11 +88,25 @@ export function ChatScreen({ route, navigation }: Props) {
       <Header title={otherUserName} onBack={() => navigation.goBack()} />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={80}>
-        <FlatList
-          data={messages}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: spacing.lg }}
-          renderItem={({ item }) => {
+        {isLoading ? (
+          <View style={styles.centerFill}>
+            <ActivityIndicator color={theme.primary} />
+          </View>
+        ) : (
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ padding: spacing.lg, flexGrow: 1 }}
+            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+            ListEmptyComponent={
+              <View style={styles.centerFill}>
+                <Text variant="body" color="secondary">
+                  Henüz mesaj yok — ilk mesajı sen gönder.
+                </Text>
+              </View>
+            }
+            renderItem={({ item }) => {
             const isMine = item.senderId === user?.id;
             return (
               <View style={[styles.bubbleRow, isMine ? styles.bubbleRowMine : styles.bubbleRowTheirs]}>
@@ -104,8 +133,9 @@ export function ChatScreen({ route, navigation }: Props) {
                 </View>
               </View>
             );
-          }}
-        />
+            }}
+          />
+        )}
 
         <View style={[styles.inputBar, { borderTopColor: theme.border, backgroundColor: theme.surface }]}>
           <View style={[styles.textInputWrapper, { backgroundColor: theme.background, borderColor: theme.border }]}>
@@ -119,13 +149,14 @@ export function ChatScreen({ route, navigation }: Props) {
               onSubmitEditing={handleSend}
             />
           </View>
-          <Pressable
+          <Touchable
             onPress={handleSend}
             disabled={!draft.trim() || isSending}
+            haptic
             style={[styles.sendButton, { backgroundColor: theme.primary, opacity: !draft.trim() || isSending ? 0.5 : 1 }]}
           >
             <Ionicons name="send" size={18} color={theme.onPrimary} />
-          </Pressable>
+          </Touchable>
         </View>
       </KeyboardAvoidingView>
     </ScreenContainer>
@@ -133,6 +164,7 @@ export function ChatScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  centerFill: { flex: 1, alignItems: "center", justifyContent: "center" },
   bubbleRow: { flexDirection: "row", marginBottom: spacing.sm, maxWidth: "80%" },
   bubbleRowMine: { alignSelf: "flex-end" },
   bubbleRowTheirs: { alignSelf: "flex-start" },

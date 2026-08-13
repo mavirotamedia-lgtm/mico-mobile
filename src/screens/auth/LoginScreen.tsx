@@ -1,21 +1,22 @@
 import { useState } from "react";
-import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
-import { palette, spacing } from "@/theme/tokens";
+import { palette, radius, spacing } from "@/theme/tokens";
 import { Text, Button, Input } from "@/components/ui";
 import type { AuthStackParamList } from "@/navigation/RootNavigator";
 import { ApiError } from "@/api/client";
+
+const BG_IMAGE = "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1200&q=70";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
 export function LoginScreen({ navigation }: Props) {
   const { login } = useAuth();
   const { theme } = useTheme();
-  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -34,83 +35,100 @@ export function LoginScreen({ navigation }: Props) {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <View style={{ flex: 1, backgroundColor: theme.background }}>
-        <View style={[styles.hero, { paddingTop: insets.top + spacing.xl }]}>
-          <View style={styles.brandRow}>
-            <Ionicons name="boat" size={22} color={palette.gold500} />
-            <Text variant="h1" color="onDark" weight="extrabold" style={{ marginLeft: 6 }}>
-              MİÇO
-            </Text>
-          </View>
-          <Text variant="h2" color="onDark" weight="bold" style={{ marginTop: spacing.md }}>
-            Hoş geldin!
-          </Text>
-          <Text variant="bodySmall" color="onDarkMuted" style={{ marginTop: 2 }}>
-            Devam etmek için giriş yap.
-          </Text>
-        </View>
+    <View style={{ flex: 1, backgroundColor: palette.navy950 }}>
+      <Image source={{ uri: BG_IMAGE }} style={StyleSheet.absoluteFillObject} resizeMode="cover" blurRadius={2} />
+      <LinearGradient colors={["rgba(6,15,32,0.65)", "rgba(6,15,32,0.8)"]} style={StyleSheet.absoluteFillObject} />
 
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
-          style={[styles.card, { backgroundColor: theme.background }]}
-          contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Input
-            label="E-posta"
-            icon="mail-outline"
-            placeholder="ornek@mail.com"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <Input
-            label="Şifre"
-            icon="lock-closed-outline"
-            placeholder="••••••••"
-            isPassword
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={[styles.card, { backgroundColor: theme.surface, shadowColor: palette.navy950 }]}>
+            <View style={styles.brandRow}>
+              <View style={[styles.brandIcon, { borderColor: theme.primary }]}>
+                <Ionicons name="boat" size={16} color={theme.primary} />
+              </View>
+              <Text variant="h1" weight="extrabold" style={{ marginLeft: 6 }}>
+                MİÇO
+              </Text>
+            </View>
 
-          {error ? (
-            <Text variant="bodySmall" color="danger" style={{ marginBottom: spacing.sm }}>
-              {error}
+            <Text variant="h2" weight="bold" style={{ marginTop: spacing.lg, textAlign: "center" }}>
+              Hoş geldin!
             </Text>
-          ) : null}
+            <Text variant="bodySmall" color="secondary" style={{ marginTop: 2, marginBottom: spacing.lg, textAlign: "center" }}>
+              Devam etmek için giriş yap.
+            </Text>
 
-          <Button label="Giriş Yap" onPress={handleSubmit} loading={isSubmitting} disabled={!email || !password} style={{ marginTop: spacing.xs }} />
+            <Input
+              label="E-posta"
+              icon="mail-outline"
+              placeholder="ornek@mail.com"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+            />
+            <Input
+              label="Şifre"
+              icon="lock-closed-outline"
+              placeholder="••••••••"
+              isPassword
+              value={password}
+              onChangeText={setPassword}
+            />
 
-          <View style={styles.footerRow}>
-            <Text variant="bodySmall" color="secondary">
-              Hesabın yok mu?
-            </Text>
-            <Text
-              variant="bodySmall"
-              weight="bold"
-              color="accent"
-              style={{ marginLeft: 6 }}
-              onPress={() => navigation.navigate("Register")}
-            >
-              Kayıt ol
-            </Text>
+            {error ? (
+              <Text variant="bodySmall" color="danger" style={{ marginBottom: spacing.sm }}>
+                {error}
+              </Text>
+            ) : null}
+
+            <Button label="Giriş Yap" onPress={handleSubmit} loading={isSubmitting} disabled={!email || !password} style={{ marginTop: spacing.xs }} />
+
+            <View style={styles.footerRow}>
+              <Text variant="bodySmall" color="secondary">
+                Hesabın yok mu?
+              </Text>
+              <Text
+                variant="bodySmall"
+                weight="bold"
+                color="accent"
+                style={{ marginLeft: 6 }}
+                onPress={() => navigation.navigate("Register")}
+              >
+                Kayıt ol
+              </Text>
+            </View>
           </View>
         </ScrollView>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    backgroundColor: palette.navy950,
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xxl,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+  scrollContent: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: spacing.xl },
+  card: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.35,
+    shadowRadius: 30,
+    elevation: 10,
   },
-  brandRow: { flexDirection: "row", alignItems: "center" },
-  card: { flex: 1, marginTop: -20, borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+  brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "center" },
+  brandIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   footerRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.lg },
 });

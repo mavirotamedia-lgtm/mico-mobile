@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ScrollView, View, Image, StyleSheet } from "react-native";
+import { ActivityIndicator, ScrollView, View, Image, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,6 +30,7 @@ export function BoatDetailScreen({ route, navigation }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
@@ -41,6 +42,8 @@ export function BoatDetailScreen({ route, navigation }: Props) {
       setRecords(maintenanceData);
     } catch (e) {
       show(e instanceof ApiError ? e.message : "Tekne bilgileri yüklenemedi.", "error");
+    } finally {
+      setIsInitialLoading(false);
     }
   }, [boatId, show]);
 
@@ -49,6 +52,17 @@ export function BoatDetailScreen({ route, navigation }: Props) {
       load();
     }, [load])
   );
+
+  if (isInitialLoading) {
+    return (
+      <ScreenContainer>
+        <Header title="Tekne" onBack={() => navigation.goBack()} />
+        <View style={styles.centerFill}>
+          <ActivityIndicator color={theme.primary} />
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   async function handleAddRecord() {
     if (!title.trim() || !description.trim()) return;
@@ -152,6 +166,7 @@ function InfoRow({ label, value, last }: { label: string; value: string; last?: 
 }
 
 const styles = StyleSheet.create({
+  centerFill: { flex: 1, alignItems: "center", justifyContent: "center" },
   infoRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 },
   sectionHeaderRow: {
     flexDirection: "row",

@@ -1,8 +1,9 @@
-import { ActivityIndicator, Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { ActivityIndicator, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
 import { Text } from "@/components/ui/Text";
+import { Touchable } from "@/components/ui/Touchable";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "md" | "lg";
@@ -59,17 +60,18 @@ export function Button({
   };
 
   return (
-    <Pressable
+    <Touchable
       onPress={onPress}
       disabled={isDisabled}
-      style={({ pressed }) => [
+      haptic={!isDisabled}
+      style={[
         styles.base,
         size === "lg" ? styles.lg : styles.md,
         {
           backgroundColor: backgrounds[variant],
           borderColor: borders[variant],
           borderWidth: borders[variant] ? 1.5 : 0,
-          opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
+          opacity: isDisabled ? 0.5 : 1,
           alignSelf: fullWidth ? "stretch" : "flex-start",
         },
         style,
@@ -85,7 +87,7 @@ export function Button({
           </Text>
         </>
       )}
-    </Pressable>
+    </Touchable>
   );
 }
 

@@ -10,3 +10,4 @@ export { BottomNav, type BottomNavItem } from "@/components/ui/BottomNav";
 export { Modal } from "@/components/ui/Modal";
 export { ToastProvider, useToast } from "@/components/ui/Toast";
 export { ScreenContainer } from "@/components/ui/ScreenContainer";
+export { Touchable } from "@/components/ui/Touchable";

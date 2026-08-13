@@ -1,6 +1,7 @@
-import { View, StyleSheet, Pressable, type StyleProp, type ViewStyle } from "react-native";
+import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
+import { Touchable } from "@/components/ui/Touchable";
 
 type Props = {
   children: React.ReactNode;
@@ -31,10 +32,12 @@ export function Card({ children, onPress, style, padded = true }: Props) {
 
   if (!onPress) return content;
 
+  // scaleTo 0.98: kart butondan daha buyuk bir yuzey oldugu icin daha
+  // belli belirsiz bir "bas" hissi yeterli — buton kadar sert kuculmemeli.
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}>
+    <Touchable onPress={onPress} scaleTo={0.98} haptic>
       {content}
-    </Pressable>
+    </Touchable>
   );
 }
 

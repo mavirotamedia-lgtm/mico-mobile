@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ScrollView, View, StyleSheet, Image, Pressable } from "react-native";
+import { ActivityIndicator, ScrollView, View, StyleSheet, Image, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import type { CompositeScreenProps } from "@react-navigation/native";
@@ -35,6 +35,7 @@ export function HomeScreen({ navigation }: Props) {
   const { show } = useToast();
   const [boat, setBoat] = useState<Boat | null>(null);
   const [craftsmen, setCraftsmen] = useState<Craftsman[]>([]);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
@@ -43,6 +44,8 @@ export function HomeScreen({ navigation }: Props) {
       setCraftsmen(craftsmenRes.items.slice(0, 4));
     } catch (e) {
       show(e instanceof ApiError ? e.message : "Ana sayfa yüklenemedi.", "error");
+    } finally {
+      setIsInitialLoading(false);
     }
   }, [show]);
 
@@ -51,6 +54,16 @@ export function HomeScreen({ navigation }: Props) {
       load();
     }, [load])
   );
+
+  if (isInitialLoading) {
+    return (
+      <ScreenContainer>
+        <View style={styles.centerFill}>
+          <ActivityIndicator color={theme.primary} />
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer>
@@ -181,6 +194,7 @@ function SectionTitle({ children }: { children: string }) {
 }
 
 const styles = StyleSheet.create({
+  centerFill: { flex: 1, alignItems: "center", justifyContent: "center" },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: spacing.lg },
   bellButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   quickRow: { flexDirection: "row", gap: spacing.sm },
