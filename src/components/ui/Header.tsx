@@ -39,7 +39,7 @@ export function Header({ title, onBack, rightIcon, onRightPress, transparent }: 
 
       <Text
         variant="h2"
-        weight="bold"
+        weight="extrabold"
         numberOfLines={1}
         color={transparent ? "onDark" : "primary"}
         style={styles.title}

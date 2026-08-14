@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import * as craftsmenApi from "@/api/craftsmen";
 import * as conversationsApi from "@/api/conversations";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
-import { Text, Card, Avatar, Rating, Badge, Button, Header, ScreenContainer, useToast } from "@/components/ui";
+import { Text, Card, Avatar, Rating, Badge, Button, Header, ScreenContainer, Reveal, useToast } from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { Craftsman } from "@/types/mico";
 import { SPECIALTY_LABELS } from "@/types/mico";
@@ -45,13 +45,13 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
   return (
     <ScreenContainer>
       <Header title="Usta Profili" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1 }}>
         {craftsman ? (
-          <>
+          <Reveal>
             <Card style={{ alignItems: "center" }}>
               <Avatar name={craftsman.businessName ?? "Usta"} uri={craftsman.avatar} size={72} />
               <View style={{ flexDirection: "row", alignItems: "center", marginTop: spacing.sm }}>
-                <Text variant="h1" weight="bold">
+                <Text variant="h1" weight="extrabold">
                   {craftsman.businessName ?? SPECIALTY_LABELS[craftsman.specialty]}
                 </Text>
                 {craftsman.isVerified ? (
@@ -78,19 +78,23 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
             <Button
               label="Mesaj Gönder"
               icon="chatbubble-outline"
+              size="lg"
               onPress={handleMessage}
               loading={isMessaging}
               style={{ marginTop: spacing.lg }}
             />
-          </>
+          </Reveal>
         ) : loadError ? (
-          <Text variant="body" color="danger">
-            {loadError}
-          </Text>
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <Ionicons name="alert-circle-outline" size={32} color={theme.textSecondary} />
+            <Text variant="body" color="secondary" style={{ marginTop: spacing.sm, textAlign: "center" }}>
+              {loadError}
+            </Text>
+          </View>
         ) : (
-          <Text variant="body" color="secondary">
-            Yükleniyor...
-          </Text>
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <ActivityIndicator color={theme.primary} />
+          </View>
         )}
       </ScrollView>
     </ScreenContainer>

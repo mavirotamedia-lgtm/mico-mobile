@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { FlatList, View, Pressable, StyleSheet, RefreshControl } from "react-native";
+import { FlatList, View, StyleSheet, RefreshControl } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import * as craftsmenApi from "@/api/craftsmen";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
-import { Text, Card, Avatar, Rating, Badge, Header, ScreenContainer, useToast } from "@/components/ui";
+import { Text, Card, Avatar, Rating, Badge, Header, ScreenContainer, Touchable, Reveal, Skeleton, useToast } from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { Craftsman } from "@/types/mico";
 import { SPECIALTY_LABELS, type CraftsmanSpecialty } from "@/types/mico";
@@ -22,23 +22,46 @@ export function CraftsmanListScreen({ navigation }: Props) {
   const { show } = useToast();
   const [craftsmen, setCraftsmen] = useState<Craftsman[]>([]);
   const [specialty, setSpecialty] = useState<CraftsmanSpecialty | undefined>();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await craftsmenApi.listCraftsmen(specialty ? { specialty } : {});
-      setCraftsmen(res.items);
-    } catch (e) {
-      show(e instanceof ApiError ? e.message : "Ustalar yüklenemedi.", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [specialty, show]);
+  const load = useCallback(
+    async (isRefresh = false) => {
+      if (isRefresh) setIsRefreshing(true);
+      try {
+        const res = await craftsmenApi.listCraftsmen(specialty ? { specialty } : {});
+        setCraftsmen(res.items);
+      } catch (e) {
+        show(e instanceof ApiError ? e.message : "Ustalar yüklenemedi.", "error");
+      } finally {
+        setIsInitialLoading(false);
+        setIsRefreshing(false);
+      }
+    },
+    [specialty, show]
+  );
 
   useEffect(() => {
     load();
   }, [load]);
+
+  if (isInitialLoading) {
+    return (
+      <ScreenContainer>
+        <Header title="Usta Listesi" onBack={() => navigation.goBack()} />
+        <View style={{ padding: spacing.lg }}>
+          <View style={{ flexDirection: "row", gap: spacing.xs, marginBottom: spacing.lg }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} width={72} height={32} radius={radius.pill} />
+            ))}
+          </View>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} width="100%" height={76} radius={radius.xl} style={{ marginBottom: spacing.sm }} />
+          ))}
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer>
@@ -54,17 +77,19 @@ export function CraftsmanListScreen({ navigation }: Props) {
         renderItem={({ item: [value, label] }) => {
           const active = specialty === value;
           return (
-            <Pressable
+            <Touchable
+              haptic
+              scaleTo={0.95}
               onPress={() => setSpecialty(value)}
               style={[
                 styles.chip,
                 { borderColor: active ? theme.primary : theme.border, backgroundColor: active ? theme.primary : theme.surface },
               ]}
             >
-              <Text variant="bodySmall" weight="semibold" style={{ color: active ? theme.onPrimary : theme.textSecondary }}>
+              <Text variant="bodySmall" weight="bold" style={{ color: active ? theme.onPrimary : theme.textSecondary }}>
                 {label}
               </Text>
-            </Pressable>
+            </Touchable>
           );
         }}
       />
@@ -73,7 +98,7 @@ export function CraftsmanListScreen({ navigation }: Props) {
         data={craftsmen}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: spacing.lg, flexGrow: 1 }}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} tintColor={theme.primary} />}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => load(true)} tintColor={theme.primary} />}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="search-outline" size={36} color={theme.textSecondary} />
@@ -82,27 +107,29 @@ export function CraftsmanListScreen({ navigation }: Props) {
             </Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <Card
-            onPress={() => navigation.navigate("CraftsmanDetail", { craftsmanId: item.id })}
-            style={{ flexDirection: "row", alignItems: "center", marginBottom: spacing.sm }}
-          >
-            <Avatar name={item.businessName ?? "Usta"} uri={item.avatar} size={48} />
-            <View style={{ marginLeft: spacing.sm, flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text variant="body" weight="semibold" numberOfLines={1} style={{ flex: 1 }}>
-                  {item.businessName ?? SPECIALTY_LABELS[item.specialty]}
+        renderItem={({ item, index }) => (
+          <Reveal delay={index * 50}>
+            <Card
+              onPress={() => navigation.navigate("CraftsmanDetail", { craftsmanId: item.id })}
+              style={{ flexDirection: "row", alignItems: "center", marginBottom: spacing.sm }}
+            >
+              <Avatar name={item.businessName ?? "Usta"} uri={item.avatar} size={48} />
+              <View style={{ marginLeft: spacing.sm, flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text variant="body" weight="bold" numberOfLines={1} style={{ flex: 1 }}>
+                    {item.businessName ?? SPECIALTY_LABELS[item.specialty]}
+                  </Text>
+                  {item.isVerified ? <Ionicons name="checkmark-circle" size={16} color={theme.success} /> : null}
+                </View>
+                <Rating value={item.ratingAvg} count={item.ratingCount} />
+                <Text variant="caption" color="secondary" numberOfLines={1}>
+                  {item.city}
+                  {item.marina ? ` · ${item.marina}` : ""}
                 </Text>
-                {item.isVerified ? <Ionicons name="checkmark-circle" size={16} color={theme.success} /> : null}
               </View>
-              <Rating value={item.ratingAvg} count={item.ratingCount} />
-              <Text variant="caption" color="secondary" numberOfLines={1}>
-                {item.city}
-                {item.marina ? ` · ${item.marina}` : ""}
-              </Text>
-            </View>
-            <Badge label={SPECIALTY_LABELS[item.specialty]} tone="neutral" />
-          </Card>
+              <Badge label={SPECIALTY_LABELS[item.specialty]} tone="neutral" />
+            </Card>
+          </Reveal>
         )}
       />
     </ScreenContainer>
