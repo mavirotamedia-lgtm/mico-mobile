@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { FlatList, View, StyleSheet, RefreshControl } from "react-native";
+import { FlatList, View, StyleSheet, RefreshControl, Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -72,17 +72,29 @@ export function OffersScreen({ route, navigation }: Props) {
     }, [load])
   );
 
-  async function handleAccept(offerId: string) {
-    setBusyOfferId(offerId);
-    try {
-      await offersApi.acceptOffer(offerId);
-      show("Teklif kabul edildi", "success");
-      load();
-    } catch (e) {
-      show(e instanceof ApiError ? e.message : "Teklif kabul edilemedi.", "error");
-    } finally {
-      setBusyOfferId(null);
-    }
+  function handleAccept(offer: OfferWithCraftsman) {
+    Alert.alert(
+      "Teklifi Kabul Et",
+      `${offer.craftsmanInfo?.businessName ?? "Bu usta"} ile anlaşılacak, diğer teklifler otomatik reddedilecek. Onaylıyor musun?`,
+      [
+        { text: "Vazgeç", style: "cancel" },
+        {
+          text: "Kabul Et",
+          onPress: async () => {
+            setBusyOfferId(offer.id);
+            try {
+              await offersApi.acceptOffer(offer.id);
+              show("Teklif kabul edildi", "success");
+              load();
+            } catch (e) {
+              show(e instanceof ApiError ? e.message : "Teklif kabul edilemedi.", "error");
+            } finally {
+              setBusyOfferId(null);
+            }
+          },
+        },
+      ]
+    );
   }
 
   async function handleMessage(offer: OfferWithCraftsman) {
@@ -163,7 +175,7 @@ export function OffersScreen({ route, navigation }: Props) {
                   label="Kabul Et"
                   fullWidth={false}
                   style={{ flex: 1, marginLeft: spacing.sm }}
-                  onPress={() => handleAccept(item.id)}
+                  onPress={() => handleAccept(item)}
                   loading={busyOfferId === item.id}
                 />
               ) : null}

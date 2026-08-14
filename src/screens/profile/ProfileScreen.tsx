@@ -1,4 +1,4 @@
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
@@ -26,6 +26,13 @@ export function ProfileScreen({ navigation }: Props) {
     { icon: "pricetag-outline", label: "Servis Taleplerim", onPress: () => navigation.navigate("ServiceRequests") },
     { icon: "construct-outline", label: "Usta Bul", onPress: () => navigation.navigate("CraftsmanList") },
   ];
+
+  function handleLogout() {
+    Alert.alert("Çıkış Yap", "Hesabından çıkmak istediğine emin misin?", [
+      { text: "Vazgeç", style: "cancel" },
+      { text: "Çıkış Yap", style: "destructive", onPress: logout },
+    ]);
+  }
 
   const themeOptions: { key: "light" | "dark" | "system"; label: string }[] = [
     { key: "light", label: "Açık" },
@@ -98,7 +105,7 @@ export function ProfileScreen({ navigation }: Props) {
           })}
         </Card>
 
-        <Touchable onPress={logout} haptic style={styles.logoutRow}>
+        <Touchable onPress={handleLogout} haptic style={styles.logoutRow}>
           <Ionicons name="log-out-outline" size={20} color={theme.danger} />
           <Text variant="body" weight="semibold" color="danger" style={{ marginLeft: spacing.sm }}>
             Çıkış Yap

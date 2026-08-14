@@ -32,14 +32,17 @@ export function CreateServiceRequestScreen({ route, navigation }: Props) {
     // Bilerek sadece mount'ta bir kez calisir — boatId'yi bagimliliga eklemek
     // kullanici bir tekne cip'ine her dokundugunda gereksiz yere tekne
     // listesini yeniden cekiyordu.
-    boatsApi.listBoats().then((list) => {
-      setBoats(list);
-      setBoatId((current) => {
-        if (current || !list[0]) return current;
-        if (list[0].homePort) setCity(list[0].homePort);
-        return list[0].id;
-      });
-    });
+    boatsApi
+      .listBoats()
+      .then((list) => {
+        setBoats(list);
+        setBoatId((current) => {
+          if (current || !list[0]) return current;
+          if (list[0].homePort) setCity(list[0].homePort);
+          return list[0].id;
+        });
+      })
+      .catch((e) => show(e instanceof ApiError ? e.message : "Tekneler yüklenemedi.", "error"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
