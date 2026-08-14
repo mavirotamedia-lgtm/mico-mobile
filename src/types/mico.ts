@@ -57,6 +57,8 @@ export type CreateServiceRequestInput = {
   description: string;
   city: string;
   marina?: string;
+  latitude?: number;
+  longitude?: number;
   isUrgent?: boolean;
 };
 

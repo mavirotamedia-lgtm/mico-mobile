@@ -19,6 +19,12 @@
         {
           "photosPermission": "MİÇO, tekne fotoğrafı eklemen için fotoğraflarına erişim istiyor."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermissionDescription": "MİÇO, servis talebine konumunu eklemen için konumuna erişim istiyor."
+        }
       ]
     ]
   }

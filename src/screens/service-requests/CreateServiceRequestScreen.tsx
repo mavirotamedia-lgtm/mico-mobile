@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { ScrollView, View, Pressable, StyleSheet, Switch } from "react-native";
+import * as Location from "expo-location";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as boatsApi from "@/api/boats";
 import * as serviceRequestsApi from "@/api/serviceRequests";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
-import { Text, Button, Input, Header, ScreenContainer, useToast } from "@/components/ui";
+import { Text, Button, Input, Header, ScreenContainer, Touchable, useToast } from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import { ApiError } from "@/api/client";
 import type { Boat } from "@/types/api";
@@ -24,6 +25,8 @@ export function CreateServiceRequestScreen({ route, navigation }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [city, setCity] = useState("");
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
   const [isUrgent, setIsUrgent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,6 +49,28 @@ export function CreateServiceRequestScreen({ route, navigation }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  async function handleUseLocation() {
+    setIsLocating(true);
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) {
+        show("Konum izni verilmedi.", "error");
+        return;
+      }
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setCoords({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+
+      const places = await Location.reverseGeocodeAsync(position.coords).catch(() => []);
+      const place = places[0];
+      const label = place ? [place.district, place.city ?? place.subregion ?? place.region].filter(Boolean).join(", ") : "";
+      setCity(label || "Konumum");
+    } catch {
+      show("Konum alınamadı.", "error");
+    } finally {
+      setIsLocating(false);
+    }
+  }
+
   async function handleSubmit() {
     setError(null);
     setIsSubmitting(true);
@@ -56,6 +81,8 @@ export function CreateServiceRequestScreen({ route, navigation }: Props) {
         title: title.trim(),
         description: description.trim(),
         city: city.trim(),
+        latitude: coords?.latitude,
+        longitude: coords?.longitude,
         isUrgent,
       });
       show("Servis talebi oluşturuldu", "success");
@@ -106,7 +133,25 @@ export function CreateServiceRequestScreen({ route, navigation }: Props) {
           numberOfLines={4}
           style={{ minHeight: 90, textAlignVertical: "top" }}
         />
-        <Input label="Konum" placeholder="ör. Bodrum Marina" value={city} onChangeText={setCity} icon="location-outline" />
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <Text variant="bodySmall" weight="semibold" color="secondary">
+            Konum
+          </Text>
+          <Touchable onPress={handleUseLocation} haptic disabled={isLocating}>
+            <Text variant="bodySmall" weight="bold" color="accent">
+              {isLocating ? "Bulunuyor..." : "📍 Konumumu Kullan"}
+            </Text>
+          </Touchable>
+        </View>
+        <Input
+          placeholder="ör. Bodrum Marina"
+          value={city}
+          onChangeText={(t) => {
+            setCity(t);
+            setCoords(null);
+          }}
+          icon="location-outline"
+        />
 
         <View style={[styles.urgentRow, { borderColor: theme.border }]}>
           <View>
