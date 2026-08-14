@@ -13,6 +13,7 @@ import { spacing, radius } from "@/theme/tokens";
 import { Text, Card, Rating, Badge, Avatar, BoatVisual, ScreenContainer, Touchable, Reveal, Skeleton, useToast } from "@/components/ui";
 import * as boatsApi from "@/api/boats";
 import * as craftsmenApi from "@/api/craftsmen";
+import * as notificationsApi from "@/api/notifications";
 import { ApiError } from "@/api/client";
 import type { Boat } from "@/types/api";
 import type { Craftsman } from "@/types/mico";
@@ -40,6 +41,7 @@ export function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [boat, setBoat] = useState<Boat | null>(null);
   const [craftsmen, setCraftsmen] = useState<Craftsman[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -47,9 +49,14 @@ export function HomeScreen({ navigation }: Props) {
     async (isRefresh = false) => {
       if (isRefresh) setIsRefreshing(true);
       try {
-        const [boats, craftsmenRes] = await Promise.all([boatsApi.listBoats(), craftsmenApi.listCraftsmen()]);
+        const [boats, craftsmenRes, notificationsRes] = await Promise.all([
+          boatsApi.listBoats(),
+          craftsmenApi.listCraftsmen(),
+          notificationsApi.listNotifications(),
+        ]);
         setBoat(boats[0] ?? null);
         setCraftsmen(craftsmenRes.items.slice(0, 4));
+        setUnreadCount(notificationsRes.items.filter((n) => !n.readAt).length);
       } catch (e) {
         show(e instanceof ApiError ? e.message : "Ana sayfa yüklenemedi.", "error");
       } finally {
@@ -133,9 +140,17 @@ export function HomeScreen({ navigation }: Props) {
               <Text variant="display" color="onDark" weight="extrabold" style={{ fontSize: 26, lineHeight: 32 }}>
                 Merhaba, {user?.name?.split(" ")[0] ?? "Kaptan"}
               </Text>
-              <View style={styles.bellButton}>
+              <Touchable
+                onPress={() => navigation.navigate("Notifications")}
+                haptic
+                scaleTo={0.9}
+                style={styles.bellButton}
+              >
                 <Ionicons name="notifications-outline" size={20} color={theme.textOnDark} />
-              </View>
+                {unreadCount > 0 ? (
+                  <View style={[styles.bellBadge, { backgroundColor: theme.danger, borderColor: theme.heroGradient[0] }]} />
+                ) : null}
+              </Touchable>
             </View>
 
             {boat ? (
@@ -294,6 +309,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.12)",
+  },
+  bellBadge: {
+    position: "absolute",
+    top: 8,
+    right: 9,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    borderWidth: 1.5,
   },
   emptyBoatIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   quickGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },

@@ -94,4 +94,24 @@ export type Message = {
   createdAt: string;
 };
 
+export type NotificationType =
+  | "MAINTENANCE_DUE"
+  | "SERVICE_OFFER_RECEIVED"
+  | "SERVICE_OFFER_ACCEPTED"
+  | "NEW_MESSAGE"
+  | "REVIEW_RECEIVED"
+  | "TOKEN_LOW"
+  | "ADMIN_ANNOUNCEMENT";
+
+export type AppNotification = {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data: unknown;
+  readAt: string | null;
+  createdAt: string;
+};
+
 export type Paginated<T> = { items: T[]; page: number; pageSize: number; hasMore: boolean };

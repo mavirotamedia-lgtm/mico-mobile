@@ -15,6 +15,8 @@ import { CraftsmanListScreen } from "@/screens/craftsmen/CraftsmanListScreen";
 import { CraftsmanDetailScreen } from "@/screens/craftsmen/CraftsmanDetailScreen";
 import { OffersScreen } from "@/screens/offers/OffersScreen";
 import { ChatScreen } from "@/screens/chat/ChatScreen";
+import { ConversationsScreen } from "@/screens/messages/ConversationsScreen";
+import { NotificationsScreen } from "@/screens/notifications/NotificationsScreen";
 
 export type AuthStackParamList = {
   Splash: undefined;
@@ -31,6 +33,8 @@ export type AppStackParamList = {
   CraftsmanDetail: { craftsmanId: string };
   Offers: { serviceRequestId: string; requestTitle?: string };
   Chat: { conversationId: string; otherUserName: string };
+  Conversations: undefined;
+  Notifications: undefined;
 };
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -65,6 +69,8 @@ export function RootNavigator() {
           <AppStack.Screen name="CraftsmanDetail" component={CraftsmanDetailScreen} />
           <AppStack.Screen name="Offers" component={OffersScreen} />
           <AppStack.Screen name="Chat" component={ChatScreen} />
+          <AppStack.Screen name="Conversations" component={ConversationsScreen} />
+          <AppStack.Screen name="Notifications" component={NotificationsScreen} />
         </AppStack.Navigator>
       ) : (
         <AuthStack.Navigator screenOptions={screenOptions}>
