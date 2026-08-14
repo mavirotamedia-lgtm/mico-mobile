@@ -13,3 +13,5 @@ export { ScreenContainer } from "@/components/ui/ScreenContainer";
 export { Touchable } from "@/components/ui/Touchable";
 export { Reveal } from "@/components/ui/Reveal";
 export { Skeleton } from "@/components/ui/Skeleton";
+export { BoatTypeIcon } from "@/components/ui/BoatTypeIcon";
+export { BoatVisual } from "@/components/ui/BoatVisual";

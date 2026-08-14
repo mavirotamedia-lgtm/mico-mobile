@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { FlatList, View, StyleSheet, Image, RefreshControl } from "react-native";
+import { FlatList, View, StyleSheet, RefreshControl } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CompositeScreenProps } from "@react-navigation/native";
@@ -7,7 +7,7 @@ import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import * as boatsApi from "@/api/boats";
-import { Text, Card, Button, ScreenContainer, useToast } from "@/components/ui";
+import { Text, Card, Button, BoatVisual, ScreenContainer, useToast } from "@/components/ui";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
 import type { Boat } from "@/types/api";
@@ -26,8 +26,6 @@ const BOAT_TYPE_LABEL: Record<Boat["type"], string> = {
   YACHT: "Yat",
   OTHER: "Diğer",
 };
-
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=600&q=60";
 
 export function MyBoatScreen({ navigation }: Props) {
   const { theme } = useTheme();
@@ -79,7 +77,7 @@ export function MyBoatScreen({ navigation }: Props) {
             onPress={() => navigation.navigate("BoatDetail", { boatId: item.id })}
             style={{ padding: 0, overflow: "hidden", marginBottom: spacing.md }}
           >
-            <Image source={{ uri: item.image ?? FALLBACK_IMAGE }} style={{ width: "100%", height: 140 }} />
+            <BoatVisual image={item.image} type={item.type} style={{ width: "100%", height: 140 }} iconSize={56} />
             <View style={{ padding: spacing.md }}>
               <Text variant="h2" weight="bold">
                 {item.name}

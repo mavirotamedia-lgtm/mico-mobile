@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, View, Image, StyleSheet } from "react-native";
+import { ActivityIndicator, ScrollView, View, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,14 +7,12 @@ import * as boatsApi from "@/api/boats";
 import * as maintenanceApi from "@/api/maintenance";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
-import { Text, Card, Badge, Button, Input, Header, Modal, ScreenContainer, useToast } from "@/components/ui";
+import { Text, Card, Badge, Button, Input, Header, Modal, BoatVisual, ScreenContainer, useToast } from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { Boat, MaintenanceRecord } from "@/types/api";
 import { ApiError } from "@/api/client";
 
 type Props = NativeStackScreenProps<AppStackParamList, "BoatDetail">;
-
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=800&q=70";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("tr-TR");
@@ -89,7 +87,7 @@ export function BoatDetailScreen({ route, navigation }: Props) {
     <ScreenContainer>
       <Header title={boat?.name ?? "Tekne"} onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxl }}>
-        <Image source={{ uri: boat?.image ?? FALLBACK_IMAGE }} style={{ width: "100%", height: 200 }} />
+        <BoatVisual image={boat?.image} type={boat?.type ?? "OTHER"} style={{ width: "100%", height: 200 }} iconSize={72} />
 
         <View style={{ padding: spacing.lg }}>
           <Card>

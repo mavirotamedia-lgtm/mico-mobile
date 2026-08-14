@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ScrollView, View, StyleSheet, Image, RefreshControl } from "react-native";
+import { ScrollView, View, StyleSheet, RefreshControl } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -10,7 +10,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing, radius } from "@/theme/tokens";
-import { Text, Card, Rating, Badge, Avatar, ScreenContainer, Touchable, Reveal, Skeleton, useToast } from "@/components/ui";
+import { Text, Card, Rating, Badge, Avatar, BoatVisual, ScreenContainer, Touchable, Reveal, Skeleton, useToast } from "@/components/ui";
 import * as boatsApi from "@/api/boats";
 import * as craftsmenApi from "@/api/craftsmen";
 import { ApiError } from "@/api/client";
@@ -157,10 +157,7 @@ export function HomeScreen({ navigation }: Props) {
                       </Text>
                     ) : null}
                   </View>
-                  <Image
-                    source={{ uri: boat.image ?? "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=400&q=60" }}
-                    style={{ width: 130, height: "100%" }}
-                  />
+                  <BoatVisual image={boat.image} type={boat.type} style={{ width: 130, height: "100%" }} iconSize={44} />
                 </View>
               </Card>
             ) : (
