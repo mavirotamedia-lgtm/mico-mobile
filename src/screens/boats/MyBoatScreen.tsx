@@ -78,7 +78,7 @@ export function MyBoatScreen({ navigation }: Props) {
   return (
     <ScreenContainer>
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: insets.top + spacing.sm, paddingBottom: spacing.sm }}>
-        <Text variant="h1" weight="bold">
+        <Text variant="h1" weight="extrabold">
           Teknem
         </Text>
       </View>

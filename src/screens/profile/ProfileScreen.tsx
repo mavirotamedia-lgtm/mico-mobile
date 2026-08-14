@@ -1,4 +1,4 @@
-import { View, StyleSheet, Alert } from "react-native";
+import { ScrollView, View, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
-import { Text, Card, Avatar, ScreenContainer, Touchable } from "@/components/ui";
+import { Text, Card, Avatar, ScreenContainer, Touchable, Reveal } from "@/components/ui";
 import type { MainTabParamList } from "@/navigation/MainTabs";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 
@@ -43,68 +43,74 @@ export function ProfileScreen({ navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <View style={{ padding: spacing.lg, paddingTop: insets.top + spacing.sm }}>
-        <Text variant="h1" weight="bold" style={{ marginBottom: spacing.md }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: insets.top + spacing.sm, paddingBottom: spacing.xxl }}>
+        <Text variant="h1" weight="extrabold" style={{ marginBottom: spacing.md }}>
           Profil
         </Text>
 
-        <Card style={{ flexDirection: "row", alignItems: "center" }}>
-          <Avatar name={user?.name ?? "Kaptan"} size={56} />
-          <View style={{ marginLeft: spacing.sm, flex: 1 }}>
-            <Text variant="h2" weight="bold" numberOfLines={1}>
-              {user?.name}
-            </Text>
-            <Text variant="bodySmall" color="secondary" numberOfLines={1}>
-              {user?.email}
-            </Text>
-          </View>
-        </Card>
-
-        <Text variant="bodySmall" weight="semibold" color="secondary" style={styles.sectionLabel}>
-          MENÜ
-        </Text>
-        <Card style={{ padding: 0 }}>
-          {menuItems.map((item, index) => (
-            <Touchable
-              key={item.label}
-              onPress={item.onPress}
-              haptic
-              scaleTo={0.98}
-              style={[
-                styles.menuRow,
-                index < menuItems.length - 1 && { borderBottomColor: theme.border, borderBottomWidth: StyleSheet.hairlineWidth },
-              ]}
-            >
-              <Ionicons name={item.icon} size={20} color={theme.textSecondary} />
-              <Text variant="body" style={{ marginLeft: spacing.sm, flex: 1 }}>
-                {item.label}
+        <Reveal>
+          <Card style={{ flexDirection: "row", alignItems: "center" }}>
+            <Avatar name={user?.name ?? "Kaptan"} size={56} />
+            <View style={{ marginLeft: spacing.sm, flex: 1 }}>
+              <Text variant="h2" weight="extrabold" numberOfLines={1}>
+                {user?.name}
               </Text>
-              <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
-            </Touchable>
-          ))}
-        </Card>
+              <Text variant="bodySmall" color="secondary" numberOfLines={1}>
+                {user?.email}
+              </Text>
+            </View>
+          </Card>
+        </Reveal>
 
-        <Text variant="bodySmall" weight="semibold" color="secondary" style={styles.sectionLabel}>
-          GÖRÜNÜM
-        </Text>
-        <Card style={{ flexDirection: "row", padding: spacing.xs }}>
-          {themeOptions.map((opt) => {
-            const active = preference === opt.key;
-            return (
+        <Reveal delay={60}>
+          <Text variant="bodySmall" weight="semibold" color="secondary" style={styles.sectionLabel}>
+            MENÜ
+          </Text>
+          <Card style={{ padding: 0 }}>
+            {menuItems.map((item, index) => (
               <Touchable
-                key={opt.key}
-                onPress={() => setPreference(opt.key)}
+                key={item.label}
+                onPress={item.onPress}
                 haptic
-                scaleTo={0.95}
-                style={[styles.themeOption, { backgroundColor: active ? theme.primary : "transparent" }]}
+                scaleTo={0.98}
+                style={[
+                  styles.menuRow,
+                  index < menuItems.length - 1 && { borderBottomColor: theme.border, borderBottomWidth: StyleSheet.hairlineWidth },
+                ]}
               >
-                <Text variant="bodySmall" weight="semibold" style={{ color: active ? theme.onPrimary : theme.textSecondary }}>
-                  {opt.label}
+                <Ionicons name={item.icon} size={20} color={theme.textSecondary} />
+                <Text variant="body" weight="semibold" style={{ marginLeft: spacing.sm, flex: 1 }}>
+                  {item.label}
                 </Text>
+                <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
               </Touchable>
-            );
-          })}
-        </Card>
+            ))}
+          </Card>
+        </Reveal>
+
+        <Reveal delay={120}>
+          <Text variant="bodySmall" weight="semibold" color="secondary" style={styles.sectionLabel}>
+            GÖRÜNÜM
+          </Text>
+          <Card style={{ flexDirection: "row", padding: spacing.xs }}>
+            {themeOptions.map((opt) => {
+              const active = preference === opt.key;
+              return (
+                <Touchable
+                  key={opt.key}
+                  onPress={() => setPreference(opt.key)}
+                  haptic
+                  scaleTo={0.95}
+                  style={[styles.themeOption, { backgroundColor: active ? theme.primary : "transparent" }]}
+                >
+                  <Text variant="bodySmall" weight="bold" style={{ color: active ? theme.onPrimary : theme.textSecondary }}>
+                    {opt.label}
+                  </Text>
+                </Touchable>
+              );
+            })}
+          </Card>
+        </Reveal>
 
         <Touchable onPress={handleLogout} haptic style={styles.logoutRow}>
           <Ionicons name="log-out-outline" size={20} color={theme.danger} />
@@ -112,7 +118,7 @@ export function ProfileScreen({ navigation }: Props) {
             Çıkış Yap
           </Text>
         </Touchable>
-      </View>
+      </ScrollView>
     </ScreenContainer>
   );
 }
