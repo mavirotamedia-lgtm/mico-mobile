@@ -8,8 +8,8 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import * as serviceRequestsApi from "@/api/serviceRequests";
 import { useTheme } from "@/theme/ThemeContext";
-import { spacing } from "@/theme/tokens";
-import { Text, Card, Badge, ScreenContainer, useToast } from "@/components/ui";
+import { radius, spacing } from "@/theme/tokens";
+import { Text, Card, Badge, ScreenContainer, Reveal, Skeleton, useToast } from "@/components/ui";
 import type { MainTabParamList } from "@/navigation/MainTabs";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { ServiceRequest, ServiceRequestStatus } from "@/types/mico";
@@ -46,19 +46,24 @@ export function MyServiceRequestsScreen({ navigation }: Props) {
   const { show } = useToast();
   const insets = useSafeAreaInsets();
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await serviceRequestsApi.listMyServiceRequests();
-      setRequests(res.items);
-    } catch (e) {
-      show(e instanceof ApiError ? e.message : "Servis talepleri yüklenemedi.", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [show]);
+  const load = useCallback(
+    async (isRefresh = false) => {
+      if (isRefresh) setIsRefreshing(true);
+      try {
+        const res = await serviceRequestsApi.listMyServiceRequests();
+        setRequests(res.items);
+      } catch (e) {
+        show(e instanceof ApiError ? e.message : "Servis talepleri yüklenemedi.", "error");
+      } finally {
+        setIsInitialLoading(false);
+        setIsRefreshing(false);
+      }
+    },
+    [show]
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -66,10 +71,27 @@ export function MyServiceRequestsScreen({ navigation }: Props) {
     }, [load])
   );
 
+  if (isInitialLoading) {
+    return (
+      <ScreenContainer>
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: insets.top + spacing.sm, paddingBottom: spacing.sm }}>
+          <Text variant="h1" weight="extrabold">
+            Teklifler
+          </Text>
+        </View>
+        <View style={{ paddingHorizontal: spacing.lg }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} width="100%" height={72} radius={radius.xl} style={{ marginBottom: spacing.sm }} />
+          ))}
+        </View>
+      </ScreenContainer>
+    );
+  }
+
   return (
     <ScreenContainer>
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: insets.top + spacing.sm, paddingBottom: spacing.sm }}>
-        <Text variant="h1" weight="bold">
+        <Text variant="h1" weight="extrabold">
           Teklifler
         </Text>
       </View>
@@ -77,7 +99,7 @@ export function MyServiceRequestsScreen({ navigation }: Props) {
       <FlatList
         data={requests}
         keyExtractor={(item) => item.id}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} tintColor={theme.primary} />}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => load(true)} tintColor={theme.primary} />}
         contentContainerStyle={{ padding: spacing.lg, flexGrow: 1 }}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -87,21 +109,23 @@ export function MyServiceRequestsScreen({ navigation }: Props) {
             </Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <Card
-            onPress={() => navigation.navigate("Offers", { serviceRequestId: item.id, requestTitle: item.title })}
-            style={{ marginBottom: spacing.sm }}
-          >
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <Text variant="body" weight="semibold" style={{ flex: 1 }} numberOfLines={1}>
-                {item.title}
+        renderItem={({ item, index }) => (
+          <Reveal delay={index * 50}>
+            <Card
+              onPress={() => navigation.navigate("Offers", { serviceRequestId: item.id, requestTitle: item.title })}
+              style={{ marginBottom: spacing.sm }}
+            >
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <Text variant="body" weight="bold" style={{ flex: 1 }} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <Badge label={STATUS_LABEL[item.status]} tone={STATUS_TONE[item.status]} />
+              </View>
+              <Text variant="caption" color="secondary" style={{ marginTop: 4 }}>
+                {SPECIALTY_LABELS[item.specialty]} · {item.city} · {formatDate(item.createdAt)}
               </Text>
-              <Badge label={STATUS_LABEL[item.status]} tone={STATUS_TONE[item.status]} />
-            </View>
-            <Text variant="caption" color="secondary" style={{ marginTop: 4 }}>
-              {SPECIALTY_LABELS[item.specialty]} · {item.city} · {formatDate(item.createdAt)}
-            </Text>
-          </Card>
+            </Card>
+          </Reveal>
         )}
       />
     </ScreenContainer>
