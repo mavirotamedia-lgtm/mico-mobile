@@ -13,7 +13,13 @@
       "package": "com.mavirotamarine.mico"
     },
     "plugins": [
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MİÇO, tekne fotoğrafı eklemen için fotoğraflarına erişim istiyor."
+        }
+      ]
     ]
   }
 }
