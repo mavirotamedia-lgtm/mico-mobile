@@ -56,7 +56,10 @@ export function AddBoatScreen({ navigation }: Props) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: true,
-      aspect: [4, 3],
+      // Sabit bir aspect vermiyoruz: onizleme kutusu (asagida) genis/kisa bir
+      // oranda (~2.2:1) — 4:3 gibi sabit bir kirpma zorlarsak, kutunun "cover"
+      // modu bu kirpilmis gorseli tekrar kirpip tuhaf/yakinlastirilmis
+      // gosterirdi. Kullanici nasil kirparsa kirpsin, kutu onu duzgunce kaplar.
       quality: 0.7,
     });
     if (result.canceled || !result.assets[0]) return;
