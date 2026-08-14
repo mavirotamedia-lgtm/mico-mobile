@@ -91,9 +91,19 @@ export function BoatDetailScreen({ route, navigation }: Props) {
 
         <View style={{ padding: spacing.lg }}>
           <Card>
-            <Text variant="h2" weight="bold" style={{ marginBottom: spacing.sm }}>
-              Genel Bilgiler
-            </Text>
+            <View style={[styles.sectionHeaderRow, { marginTop: 0 }]}>
+              <Text variant="h2" weight="bold">
+                Genel Bilgiler
+              </Text>
+              <Text
+                variant="bodySmall"
+                weight="semibold"
+                color="accent"
+                onPress={() => navigation.navigate("AddBoat", { boatId })}
+              >
+                Düzenle
+              </Text>
+            </View>
             <InfoRow label="Marka" value={boat?.brand ?? "—"} />
             <InfoRow label="Model" value={boat?.model ?? "—"} />
             <InfoRow label="Yıl" value={boat?.buildYear ? String(boat.buildYear) : "—"} />

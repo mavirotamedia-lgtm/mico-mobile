@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, View, Pressable, Image, StyleSheet, ActivityIndicator } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -27,9 +28,22 @@ const BOAT_TYPES: { key: string; label: string; value: BoatType }[] = [
   { key: "other", label: "Diğer", value: "OTHER" },
 ];
 
-export function AddBoatScreen({ navigation }: Props) {
+// Duzenlerken mevcut kaydin BoatType'indan makul bir varsayilan cip secmek
+// icin — OTHER, birden fazla UI secenegine karsilik geldigi icin hangisinin
+// asil secildigini geri cikaramiyoruz, en genel olana ("Diger") dusuyoruz.
+function typeToDefaultKey(type: BoatType): string {
+  if (type === "SAILBOAT") return "sailboat";
+  if (type === "YACHT" || type === "MOTORBOAT") return "motoryacht";
+  return "other";
+}
+
+export function AddBoatScreen({ navigation, route }: Props) {
   const { theme } = useTheme();
   const { show } = useToast();
+  const boatId = route.params?.boatId;
+  const isEditMode = !!boatId;
+
+  const [isInitialLoading, setIsInitialLoading] = useState(isEditMode);
   const [name, setName] = useState("");
   const [typeKey, setTypeKey] = useState("motoryacht");
   const [brand, setBrand] = useState("");
@@ -45,6 +59,35 @@ export function AddBoatScreen({ navigation }: Props) {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const selectedType = BOAT_TYPES.find((t) => t.key === typeKey) ?? BOAT_TYPES[0];
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!boatId) return;
+      let cancelled = false;
+      (async () => {
+        try {
+          const boat = await boatsApi.getBoat(boatId);
+          if (cancelled) return;
+          setName(boat.name);
+          setTypeKey(typeToDefaultKey(boat.type));
+          setBrand(boat.brand ?? "");
+          setModel(boat.model ?? "");
+          setBuildYear(boat.buildYear ? String(boat.buildYear) : "");
+          setEngineType(boat.engineType ?? "");
+          setHomePort(boat.homePort ?? "");
+          setPhotoUri(boat.image ?? null);
+          setUploadedImageUrl(boat.image ?? null);
+        } catch (e) {
+          show(e instanceof ApiError ? e.message : "Tekne bilgileri yüklenemedi.", "error");
+        } finally {
+          if (!cancelled) setIsInitialLoading(false);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [boatId, show])
+  );
 
   async function handlePickPhoto() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -84,7 +127,7 @@ export function AddBoatScreen({ navigation }: Props) {
     setIsSubmitting(true);
     try {
       const parsedYear = buildYear.trim() ? Number(buildYear.trim()) : undefined;
-      await boatsApi.createBoat({
+      const input = {
         name: name.trim(),
         type: selectedType.value,
         brand: brand.trim() || undefined,
@@ -93,19 +136,37 @@ export function AddBoatScreen({ navigation }: Props) {
         engineType: engineType.trim() || undefined,
         homePort: homePort.trim() || undefined,
         image: uploadedImageUrl || undefined,
-      });
-      show("Tekne eklendi", "success");
+      };
+
+      if (isEditMode && boatId) {
+        await boatsApi.updateBoat(boatId, input);
+        show("Tekne güncellendi", "success");
+      } else {
+        await boatsApi.createBoat(input);
+        show("Tekne eklendi", "success");
+      }
       navigation.goBack();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Tekne eklenemedi.");
+      setError(e instanceof ApiError ? e.message : "Tekne kaydedilemedi.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  if (isInitialLoading) {
+    return (
+      <ScreenContainer>
+        <Header title="Tekneyi Düzenle" onBack={() => navigation.goBack()} />
+        <View style={styles.centerFill}>
+          <ActivityIndicator color={theme.primary} />
+        </View>
+      </ScreenContainer>
+    );
+  }
+
   return (
     <ScreenContainer>
-      <Header title="Yeni Tekne" onBack={() => navigation.goBack()} />
+      <Header title={isEditMode ? "Tekneyi Düzenle" : "Yeni Tekne"} onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg }} keyboardShouldPersistTaps="handled">
         <Pressable onPress={handlePickPhoto} style={[styles.photoBox, { borderColor: theme.border }]}>
           {photoUri ? (
@@ -179,7 +240,7 @@ export function AddBoatScreen({ navigation }: Props) {
         ) : null}
 
         <Button
-          label="Kaydet"
+          label={isEditMode ? "Güncelle" : "Kaydet"}
           onPress={handleSubmit}
           loading={isSubmitting}
           disabled={!name.trim() || isUploadingPhoto}
@@ -191,6 +252,7 @@ export function AddBoatScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  centerFill: { flex: 1, alignItems: "center", justifyContent: "center" },
   photoBox: {
     width: "100%",
     height: 160,

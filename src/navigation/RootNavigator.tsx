@@ -24,7 +24,7 @@ export type AuthStackParamList = {
 
 export type AppStackParamList = {
   MainTabs: undefined;
-  AddBoat: undefined;
+  AddBoat: { boatId?: string } | undefined;
   BoatDetail: { boatId: string };
   CreateServiceRequest: { boatId?: string } | undefined;
   CraftsmanList: undefined;
