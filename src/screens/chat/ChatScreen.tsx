@@ -114,14 +114,16 @@ export function ChatScreen({ route, navigation }: Props) {
                 <View
                   style={[
                     styles.bubble,
+                    isMine ? styles.bubbleTailMine : styles.bubbleTailTheirs,
                     {
                       backgroundColor: isMine ? theme.primary : theme.surface,
                       borderColor: theme.border,
+                      shadowColor: theme.shadowColor,
                       marginLeft: isMine ? 0 : spacing.xs,
                     },
                   ]}
                 >
-                  <Text variant="bodySmall" style={{ color: isMine ? theme.onPrimary : theme.textPrimary }}>
+                  <Text variant="body" style={{ color: isMine ? theme.onPrimary : theme.textPrimary }}>
                     {item.body}
                   </Text>
                   <Text
@@ -168,7 +170,18 @@ const styles = StyleSheet.create({
   bubbleRow: { flexDirection: "row", marginBottom: spacing.sm, maxWidth: "80%" },
   bubbleRowMine: { alignSelf: "flex-end" },
   bubbleRowTheirs: { alignSelf: "flex-start" },
-  bubble: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, padding: spacing.sm },
+  bubble: {
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  bubbleTailMine: { borderBottomRightRadius: 4 },
+  bubbleTailTheirs: { borderBottomLeftRadius: 4 },
   inputBar: {
     flexDirection: "row",
     alignItems: "center",
