@@ -87,7 +87,7 @@ export function BoatDetailScreen({ route, navigation }: Props) {
     <ScreenContainer>
       <Header title={boat?.name ?? "Tekne"} onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxl }}>
-        <BoatVisual image={boat?.image} type={boat?.type ?? "OTHER"} style={{ width: "100%", height: 200 }} iconSize={72} />
+        <BoatVisual image={boat?.image} type={boat?.type ?? "OTHER"} style={{ width: "100%", height: 200 }} />
 
         <View style={{ padding: spacing.lg }}>
           <Card>

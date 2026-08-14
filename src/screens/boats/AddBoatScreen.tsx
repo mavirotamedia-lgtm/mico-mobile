@@ -24,6 +24,9 @@ export function AddBoatScreen({ navigation }: Props) {
   const [name, setName] = useState("");
   const [type, setType] = useState<BoatType>("MOTORBOAT");
   const [brand, setBrand] = useState("");
+  const [model, setModel] = useState("");
+  const [buildYear, setBuildYear] = useState("");
+  const [engineType, setEngineType] = useState("");
   const [homePort, setHomePort] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,10 +35,14 @@ export function AddBoatScreen({ navigation }: Props) {
     setError(null);
     setIsSubmitting(true);
     try {
+      const parsedYear = buildYear.trim() ? Number(buildYear.trim()) : undefined;
       await boatsApi.createBoat({
         name: name.trim(),
         type,
         brand: brand.trim() || undefined,
+        model: model.trim() || undefined,
+        buildYear: parsedYear && !Number.isNaN(parsedYear) ? parsedYear : undefined,
+        engineType: engineType.trim() || undefined,
         homePort: homePort.trim() || undefined,
       });
       show("Tekne eklendi", "success");
@@ -77,6 +84,23 @@ export function AddBoatScreen({ navigation }: Props) {
         </View>
 
         <Input label="Marka (opsiyonel)" placeholder="ör. Sea Ray" value={brand} onChangeText={setBrand} icon="pricetag-outline" />
+        <Input label="Model (opsiyonel)" placeholder="ör. 320 Sundancer" value={model} onChangeText={setModel} icon="document-text-outline" />
+        <Input
+          label="Üretim Yılı (opsiyonel)"
+          placeholder="ör. 2018"
+          value={buildYear}
+          onChangeText={(t) => setBuildYear(t.replace(/[^0-9]/g, ""))}
+          keyboardType="number-pad"
+          maxLength={4}
+          icon="calendar-outline"
+        />
+        <Input
+          label="Motor Markası (opsiyonel)"
+          placeholder="ör. Yamaha, Volvo Penta"
+          value={engineType}
+          onChangeText={setEngineType}
+          icon="cog-outline"
+        />
         <Input label="Bağlama Limanı (opsiyonel)" placeholder="ör. Bodrum Marina" value={homePort} onChangeText={setHomePort} icon="location-outline" />
 
         {error ? (

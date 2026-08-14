@@ -77,7 +77,7 @@ export function MyBoatScreen({ navigation }: Props) {
             onPress={() => navigation.navigate("BoatDetail", { boatId: item.id })}
             style={{ padding: 0, overflow: "hidden", marginBottom: spacing.md }}
           >
-            <BoatVisual image={item.image} type={item.type} style={{ width: "100%", height: 140 }} iconSize={56} />
+            <BoatVisual image={item.image} type={item.type} style={{ width: "100%", height: 140 }} />
             <View style={{ padding: spacing.md }}>
               <Text variant="h2" weight="bold">
                 {item.name}

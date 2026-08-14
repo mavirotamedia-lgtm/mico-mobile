@@ -157,7 +157,7 @@ export function HomeScreen({ navigation }: Props) {
                       </Text>
                     ) : null}
                   </View>
-                  <BoatVisual image={boat.image} type={boat.type} style={{ width: 130, height: "100%" }} iconSize={44} />
+                  <BoatVisual image={boat.image} type={boat.type} style={{ width: 130, height: "100%" }} />
                 </View>
               </Card>
             ) : (
