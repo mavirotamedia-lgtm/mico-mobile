@@ -1,4 +1,4 @@
-import { Modal as RNModal, View, Pressable, StyleSheet } from "react-native";
+import { Modal as RNModal, View, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
@@ -19,33 +19,46 @@ export function Modal({ visible, onClose, title, children }: Props) {
 
   return (
     <RNModal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} />
-      <View
-        style={[
-          styles.sheet,
-          { backgroundColor: theme.surface, paddingBottom: insets.bottom + spacing.md },
-        ]}
+      {/* backdrop mutlak konumlu, sheet ise "flex-end" ile alta itiliyor —
+          onceki surumde backdrop'un flex:1 ile alani doldurmasina guveniliyordu,
+          bu da RNModal'in ic konteynerine bagli olarak klavye acildiginda
+          sheet'i (ve Kaydet butonunu) ekran disina itebiliyordu. */}
+      <KeyboardAvoidingView
+        style={styles.flexEnd}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={[styles.grabber, { backgroundColor: theme.border }]} />
-        {title ? (
-          <View style={styles.header}>
-            <Text variant="h2" weight="bold">
-              {title}
-            </Text>
-            <Pressable onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={22} color={theme.textSecondary} />
-            </Pressable>
-          </View>
-        ) : null}
-        {children}
-      </View>
+        <Pressable style={styles.backdrop} onPress={onClose} />
+        <View
+          style={[
+            styles.sheet,
+            { backgroundColor: theme.surface, paddingBottom: insets.bottom + spacing.md },
+          ]}
+        >
+          <View style={[styles.grabber, { backgroundColor: theme.border }]} />
+          {title ? (
+            <View style={styles.header}>
+              <Text variant="h2" weight="bold">
+                {title}
+              </Text>
+              <Pressable onPress={onClose} hitSlop={8}>
+                <Ionicons name="close" size={22} color={theme.textSecondary} />
+              </Pressable>
+            </View>
+          ) : null}
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            {children}
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
     </RNModal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(6,15,32,0.55)" },
+  flexEnd: { flex: 1, justifyContent: "flex-end" },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(6,15,32,0.55)" },
   sheet: {
+    maxHeight: "85%",
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     padding: spacing.lg,
