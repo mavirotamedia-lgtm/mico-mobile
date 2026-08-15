@@ -1,8 +1,10 @@
 import { apiRequest } from "@/api/client";
-import type { Paginated, ServiceOffer } from "@/types/mico";
+import type { ServiceOffer } from "@/types/mico";
 
+// Not: backend bu uc noktada sayfalama uygulamiyor (paginate() kullanilmiyor),
+// duz bir dizi donuyor — Paginated<T> ile karistirilmamali.
 export async function listOffersForRequest(serviceRequestId: string) {
-  return apiRequest<Paginated<ServiceOffer>>(`/service-requests/${serviceRequestId}/offers`);
+  return apiRequest<ServiceOffer[]>(`/service-requests/${serviceRequestId}/offers`);
 }
 
 export async function acceptOffer(offerId: string) {

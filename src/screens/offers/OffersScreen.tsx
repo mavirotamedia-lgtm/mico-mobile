@@ -52,7 +52,7 @@ export function OffersScreen({ route, navigation }: Props) {
       try {
         const res = await offersApi.listOffersForRequest(serviceRequestId);
         const withCraftsmen = await Promise.all(
-          res.items.map(async (offer) => {
+          res.map(async (offer) => {
             try {
               const craftsmanInfo = await craftsmenApi.getCraftsman(offer.craftsmanId);
               return { ...offer, craftsmanInfo };
