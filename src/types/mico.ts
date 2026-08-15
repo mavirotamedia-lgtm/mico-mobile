@@ -30,6 +30,7 @@ export type Craftsman = {
   ratingAvg: number;
   ratingCount: number;
   createdAt: string;
+  distanceKm: number | null;
 };
 
 export type ServiceRequestStatus = "OPEN" | "OFFER_RECEIVED" | "ASSIGNED" | "COMPLETED" | "CANCELLED";

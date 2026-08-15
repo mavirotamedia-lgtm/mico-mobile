@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, View, StyleSheet, RefreshControl } from "react-native";
+import * as Location from "expo-location";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import * as craftsmenApi from "@/api/craftsmen";
@@ -22,6 +23,8 @@ export function CraftsmanListScreen({ navigation }: Props) {
   const { show } = useToast();
   const [craftsmen, setCraftsmen] = useState<Craftsman[]>([]);
   const [specialty, setSpecialty] = useState<CraftsmanSpecialty | undefined>();
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -29,7 +32,10 @@ export function CraftsmanListScreen({ navigation }: Props) {
     async (isRefresh = false) => {
       if (isRefresh) setIsRefreshing(true);
       try {
-        const res = await craftsmenApi.listCraftsmen(specialty ? { specialty } : {});
+        const res = await craftsmenApi.listCraftsmen({
+          ...(specialty ? { specialty } : {}),
+          ...(coords ? { lat: coords.latitude, lng: coords.longitude } : {}),
+        });
         setCraftsmen(res.items);
       } catch (e) {
         show(e instanceof ApiError ? e.message : "Ustalar yüklenemedi.", "error");
@@ -38,12 +44,33 @@ export function CraftsmanListScreen({ navigation }: Props) {
         setIsRefreshing(false);
       }
     },
-    [specialty, show]
+    [specialty, coords, show]
   );
 
   useEffect(() => {
     load();
   }, [load]);
+
+  async function handleToggleNearby() {
+    if (coords) {
+      setCoords(null);
+      return;
+    }
+    setIsLocating(true);
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) {
+        show("Konum izni verilmedi.", "error");
+        return;
+      }
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setCoords({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+    } catch {
+      show("Konum alınamadı.", "error");
+    } finally {
+      setIsLocating(false);
+    }
+  }
 
   if (isInitialLoading) {
     return (
@@ -66,6 +93,23 @@ export function CraftsmanListScreen({ navigation }: Props) {
   return (
     <ScreenContainer>
       <Header title="Usta Listesi" onBack={() => navigation.goBack()} />
+
+      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, alignItems: "flex-start" }}>
+        <Touchable
+          haptic
+          scaleTo={0.95}
+          onPress={handleToggleNearby}
+          disabled={isLocating}
+          style={[
+            styles.chip,
+            { borderColor: coords ? theme.primary : theme.border, backgroundColor: coords ? theme.primary : theme.surface },
+          ]}
+        >
+          <Text variant="bodySmall" weight="bold" style={{ color: coords ? theme.onPrimary : theme.textSecondary }}>
+            {isLocating ? "Bulunuyor..." : coords ? "📍 Yakınımdakiler" : "📍 Yakınımdakileri Göster"}
+          </Text>
+        </Touchable>
+      </View>
 
       <FlatList
         horizontal
@@ -125,6 +169,7 @@ export function CraftsmanListScreen({ navigation }: Props) {
                 <Text variant="caption" color="secondary" numberOfLines={1}>
                   {item.city}
                   {item.marina ? ` · ${item.marina}` : ""}
+                  {item.distanceKm !== null ? ` · ${item.distanceKm} km` : ""}
                 </Text>
               </View>
               <Badge label={SPECIALTY_LABELS[item.specialty]} tone="neutral" />
