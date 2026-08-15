@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import { ScrollView, View, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
+import * as craftsmenApi from "@/api/craftsmen";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
@@ -20,12 +22,23 @@ export function ProfileScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
   const { theme, preference, setPreference } = useTheme();
   const insets = useSafeAreaInsets();
+  const [isCraftsman, setIsCraftsman] = useState(false);
+
+  useEffect(() => {
+    craftsmenApi
+      .getMyCraftsmanProfile()
+      .then(() => setIsCraftsman(true))
+      .catch(() => setIsCraftsman(false));
+  }, []);
 
   const menuItems: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }[] = [
     { icon: "boat-outline", label: "Teknelerim", onPress: () => navigation.navigate("MyBoat") },
     { icon: "pricetag-outline", label: "Servis Taleplerim", onPress: () => navigation.navigate("ServiceRequests") },
     { icon: "construct-outline", label: "Usta Bul", onPress: () => navigation.navigate("CraftsmanList") },
     { icon: "chatbubbles-outline", label: "Mesajlarım", onPress: () => navigation.navigate("Conversations") },
+    ...(isCraftsman
+      ? [{ icon: "briefcase-outline" as const, label: "Usta Panelim", onPress: () => navigation.navigate("IncomingRequests") }]
+      : []),
   ];
 
   function handleLogout() {

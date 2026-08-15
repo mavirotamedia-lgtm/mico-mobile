@@ -13,6 +13,8 @@ import { BoatDetailScreen } from "@/screens/boats/BoatDetailScreen";
 import { CreateServiceRequestScreen } from "@/screens/service-requests/CreateServiceRequestScreen";
 import { CraftsmanListScreen } from "@/screens/craftsmen/CraftsmanListScreen";
 import { CraftsmanDetailScreen } from "@/screens/craftsmen/CraftsmanDetailScreen";
+import { IncomingRequestsScreen } from "@/screens/craftsmen/IncomingRequestsScreen";
+import { SubmitOfferScreen } from "@/screens/craftsmen/SubmitOfferScreen";
 import { OffersScreen } from "@/screens/offers/OffersScreen";
 import { ChatScreen } from "@/screens/chat/ChatScreen";
 import { ConversationsScreen } from "@/screens/messages/ConversationsScreen";
@@ -31,6 +33,8 @@ export type AppStackParamList = {
   CreateServiceRequest: { boatId?: string } | undefined;
   CraftsmanList: undefined;
   CraftsmanDetail: { craftsmanId: string };
+  IncomingRequests: undefined;
+  SubmitOffer: { serviceRequestId: string; requestTitle: string };
   Offers: { serviceRequestId: string; requestTitle?: string };
   Chat: { conversationId: string; otherUserName: string };
   Conversations: undefined;
@@ -67,6 +71,8 @@ export function RootNavigator() {
           <AppStack.Screen name="CreateServiceRequest" component={CreateServiceRequestScreen} />
           <AppStack.Screen name="CraftsmanList" component={CraftsmanListScreen} />
           <AppStack.Screen name="CraftsmanDetail" component={CraftsmanDetailScreen} />
+          <AppStack.Screen name="IncomingRequests" component={IncomingRequestsScreen} />
+          <AppStack.Screen name="SubmitOffer" component={SubmitOfferScreen} />
           <AppStack.Screen name="Offers" component={OffersScreen} />
           <AppStack.Screen name="Chat" component={ChatScreen} />
           <AppStack.Screen name="Conversations" component={ConversationsScreen} />

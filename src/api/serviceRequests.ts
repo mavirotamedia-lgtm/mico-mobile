@@ -5,6 +5,11 @@ export async function listMyServiceRequests() {
   return apiRequest<Paginated<ServiceRequest>>("/service-requests");
 }
 
+// Usta tarafı: kendi şehir/uzmanlığıyla eşleşen açık (OPEN) talepler.
+export async function listNearbyServiceRequests() {
+  return apiRequest<Paginated<ServiceRequest>>("/service-requests/nearby");
+}
+
 export async function getServiceRequest(id: string) {
   return apiRequest<ServiceRequest>(`/service-requests/${id}`);
 }
