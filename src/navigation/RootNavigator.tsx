@@ -19,6 +19,7 @@ import { OffersScreen } from "@/screens/offers/OffersScreen";
 import { ChatScreen } from "@/screens/chat/ChatScreen";
 import { ConversationsScreen } from "@/screens/messages/ConversationsScreen";
 import { NotificationsScreen } from "@/screens/notifications/NotificationsScreen";
+import type { ServiceRequest } from "@/types/mico";
 
 export type AuthStackParamList = {
   Splash: undefined;
@@ -34,7 +35,7 @@ export type AppStackParamList = {
   CraftsmanList: undefined;
   CraftsmanDetail: { craftsmanId: string };
   IncomingRequests: undefined;
-  SubmitOffer: { serviceRequestId: string; requestTitle: string };
+  SubmitOffer: { serviceRequest: ServiceRequest };
   Offers: { serviceRequestId: string; requestTitle?: string };
   Chat: { conversationId: string; otherUserName: string };
   Conversations: undefined;

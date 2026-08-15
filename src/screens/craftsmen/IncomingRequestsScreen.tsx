@@ -80,7 +80,7 @@ export function IncomingRequestsScreen({ navigation }: Props) {
         renderItem={({ item, index }) => (
           <Reveal delay={index * 50}>
             <Card
-              onPress={() => navigation.navigate("SubmitOffer", { serviceRequestId: item.id, requestTitle: item.title })}
+              onPress={() => navigation.navigate("SubmitOffer", { serviceRequest: item })}
               style={{ marginBottom: spacing.sm }}
             >
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
