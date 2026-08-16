@@ -2,14 +2,21 @@ import { useEffect, useRef } from "react";
 import { Animated, View, StyleSheet, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { palette, spacing } from "@/theme/tokens";
+import { palette, radius, spacing } from "@/theme/tokens";
 import { Text, Button, Touchable } from "@/components/ui";
 import { useAuth } from "@/store/AuthContext";
 import type { AuthStackParamList } from "@/navigation/RootNavigator";
 
 const BOAT_IMAGE =
   "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1200&q=70";
+
+const FEATURES: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
+  { icon: "shield-checkmark-outline", label: "Değerlendirilmiş\nUstalar" },
+  { icon: "flash-outline", label: "Hızlı\nServis" },
+  { icon: "diamond-outline", label: "Tokenle\nGüvende" },
+];
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Splash">;
 
@@ -35,10 +42,11 @@ export function SplashScreen({ navigation }: Props) {
     <View style={{ flex: 1, backgroundColor: palette.navy950 }}>
       <Image source={{ uri: BOAT_IMAGE }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
       {/* Splash, marka anı olarak her zaman koyu hero kullanır — açık/koyu tema
-          burada değil, altındaki Login/Register kartında devreye girer. */}
+          burada değil, altındaki Login/Register kartında devreye girer.
+          Gunbatimi hissi icin sicak amber bir orta katman eklendi. */}
       <LinearGradient
-        colors={["rgba(6,15,32,0.55)", "rgba(6,15,32,0.15)", "rgba(6,15,32,0.55)", palette.navy950]}
-        locations={[0, 0.28, 0.7, 1]}
+        colors={["rgba(20,10,4,0.55)", "rgba(201,162,39,0.14)", "rgba(6,15,32,0.75)", palette.navy950]}
+        locations={[0, 0.3, 0.72, 1]}
         style={StyleSheet.absoluteFillObject}
       />
 
@@ -47,18 +55,46 @@ export function SplashScreen({ navigation }: Props) {
           <Image source={require("../../../assets/branding/logo-icon.png")} style={styles.logoIcon} resizeMode="contain" />
           <Image source={require("../../../assets/branding/logo-wordmark.png")} style={styles.logoWordmark} resizeMode="contain" />
           <Text variant="body" color="onDark" weight="semibold" style={{ marginTop: spacing.sm }}>
-            Denizde yalnız değilsin.
+            Denizde <Text color="accent" weight="bold">yalnız</Text> değilsin.
           </Text>
         </Animated.View>
 
-        <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }], gap: spacing.sm }}>
-          <Button label="Giriş Yap" onPress={() => navigation.navigate("Login")} />
-          <Button label="Kayıt Ol" inverted onPress={() => navigation.navigate("Register")} />
-          <Touchable onPress={continueAsGuest} haptic style={{ alignItems: "center", paddingTop: spacing.xs, paddingVertical: spacing.xs }}>
-            <Text variant="bodySmall" color="onDark" weight="semibold">
-              Misafir olarak devam et
-            </Text>
-          </Touchable>
+        <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }], width: "100%" }}>
+          <View style={{ gap: spacing.sm }}>
+            <Button
+              label="Giriş Yap"
+              icon="log-in-outline"
+              trailingIcon="chevron-forward"
+              onPress={() => navigation.navigate("Login")}
+              style={styles.heroButton}
+            />
+            <Button
+              label="Hesap Oluştur"
+              icon="person-add-outline"
+              trailingIcon="chevron-forward"
+              onPress={() => navigation.navigate("Register")}
+              style={styles.heroButton}
+            />
+            <Touchable onPress={continueAsGuest} haptic style={styles.guestLink}>
+              <Text variant="bodySmall" color="onDark" weight="semibold">
+                Misafir olarak devam et
+              </Text>
+              <Ionicons name="chevron-forward" size={14} color={palette.white} style={{ marginLeft: 2 }} />
+            </Touchable>
+          </View>
+
+          <View style={styles.featureRow}>
+            {FEATURES.map((f) => (
+              <View key={f.label} style={styles.featureItem}>
+                <View style={styles.featureIconWrap}>
+                  <Ionicons name={f.icon} size={18} color={palette.gold300} />
+                </View>
+                <Text variant="caption" color="onDarkMuted" style={{ textAlign: "center", marginTop: 6 }}>
+                  {f.label}
+                </Text>
+              </View>
+            ))}
+          </View>
         </Animated.View>
       </View>
     </View>
@@ -69,4 +105,30 @@ const styles = StyleSheet.create({
   content: { flex: 1, justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing.xl },
   logoIcon: { width: 96, height: 96 },
   logoWordmark: { width: 190, height: 67, marginTop: spacing.sm },
+  heroButton: {
+    backgroundColor: "rgba(8,20,40,0.55)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  guestLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  featureRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: spacing.lg,
+  },
+  featureItem: { alignItems: "center", width: 96 },
+  featureIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

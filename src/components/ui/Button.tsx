@@ -1,4 +1,4 @@
-import { ActivityIndicator, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { ActivityIndicator, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
@@ -16,6 +16,8 @@ type Props = {
   disabled?: boolean;
   loading?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
+  /** Sağda ayrı bir ok/ikon — verildiğinde içerik sola, bu ikon sağa yaslanır. */
+  trailingIcon?: keyof typeof Ionicons.glyphMap;
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
   /** Koyu, sabit bir zemin üzerinde (ör. Splash hero) kullanılırken true —
@@ -32,6 +34,7 @@ export function Button({
   disabled,
   loading,
   icon,
+  trailingIcon,
   fullWidth = true,
   style,
   inverted,
@@ -73,6 +76,7 @@ export function Button({
           borderWidth: borders[variant] ? 1.5 : 0,
           opacity: isDisabled ? 0.5 : 1,
           alignSelf: fullWidth ? "stretch" : "flex-start",
+          justifyContent: trailingIcon ? "space-between" : "center",
         },
         style,
       ]}
@@ -81,10 +85,13 @@ export function Button({
         <ActivityIndicator color={textColors[variant]} />
       ) : (
         <>
-          {icon ? <Ionicons name={icon} size={18} color={textColors[variant]} style={{ marginRight: spacing.xs }} /> : null}
-          <Text variant="body" weight="semibold" style={{ color: textColors[variant] }}>
-            {label}
-          </Text>
+          <View style={styles.leadingGroup}>
+            {icon ? <Ionicons name={icon} size={18} color={textColors[variant]} style={{ marginRight: spacing.xs }} /> : null}
+            <Text variant="body" weight="semibold" style={{ color: textColors[variant] }}>
+              {label}
+            </Text>
+          </View>
+          {trailingIcon ? <Ionicons name={trailingIcon} size={18} color={textColors[variant]} /> : null}
         </>
       )}
     </Touchable>
@@ -100,4 +107,5 @@ const styles = StyleSheet.create({
   },
   md: { paddingVertical: 13, paddingHorizontal: spacing.lg },
   lg: { paddingVertical: 16, paddingHorizontal: spacing.xl },
+  leadingGroup: { flexDirection: "row", alignItems: "center" },
 });
