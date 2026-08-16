@@ -4,7 +4,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { palette, spacing } from "@/theme/tokens";
-import { Text, Button } from "@/components/ui";
+import { Text, Button, Touchable } from "@/components/ui";
+import { useAuth } from "@/store/AuthContext";
 import type { AuthStackParamList } from "@/navigation/RootNavigator";
 
 const BOAT_IMAGE =
@@ -14,6 +15,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Splash">;
 
 export function SplashScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { continueAsGuest } = useAuth();
 
   const brandOpacity = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
@@ -52,6 +54,11 @@ export function SplashScreen({ navigation }: Props) {
         <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }], gap: spacing.sm }}>
           <Button label="Giriş Yap" onPress={() => navigation.navigate("Login")} />
           <Button label="Kayıt Ol" inverted onPress={() => navigation.navigate("Register")} />
+          <Touchable onPress={continueAsGuest} haptic style={{ alignItems: "center", paddingTop: spacing.xs, paddingVertical: spacing.xs }}>
+            <Text variant="bodySmall" color="onDark" weight="semibold">
+              Misafir olarak devam et
+            </Text>
+          </Touchable>
         </Animated.View>
       </View>
     </View>

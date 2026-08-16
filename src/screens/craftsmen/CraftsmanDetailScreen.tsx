@@ -7,6 +7,7 @@ import * as conversationsApi from "@/api/conversations";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
 import { Text, Card, Avatar, Rating, Badge, Button, Header, ScreenContainer, Reveal, useToast } from "@/components/ui";
+import { useAuth } from "@/store/AuthContext";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { Craftsman } from "@/types/mico";
 import { SPECIALTY_LABELS } from "@/types/mico";
@@ -18,6 +19,7 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
   const { craftsmanId } = route.params;
   const { theme } = useTheme();
   const { show } = useToast();
+  const { isGuest, exitGuest } = useAuth();
   const [craftsman, setCraftsman] = useState<Craftsman | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isMessaging, setIsMessaging] = useState(false);
@@ -31,6 +33,11 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
 
   async function handleMessage() {
     if (!craftsman) return;
+    if (isGuest) {
+      show("Mesaj göndermek için giriş yapmalısın.", "error");
+      exitGuest();
+      return;
+    }
     setIsMessaging(true);
     try {
       const conversation = await conversationsApi.getOrCreateConversation(craftsman.userId);

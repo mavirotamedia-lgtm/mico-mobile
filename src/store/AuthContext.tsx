@@ -6,16 +6,20 @@ import type { PublicUser } from "@/types/api";
 
 type AuthContextValue = {
   user: PublicUser | null;
+  isGuest: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (input: { email: string; password: string; name: string; phone?: string }) => Promise<void>;
   logout: () => Promise<void>;
+  continueAsGuest: () => void;
+  exitGuest: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PublicUser | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -43,15 +47,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      isGuest,
       isLoading,
-      login: async (email, password) => setUser(await authApi.login(email, password)),
-      register: async (input) => setUser(await authApi.register(input)),
+      login: async (email, password) => {
+        setUser(await authApi.login(email, password));
+        setIsGuest(false);
+      },
+      register: async (input) => {
+        setUser(await authApi.register(input));
+        setIsGuest(false);
+      },
       logout: async () => {
         await authApi.logout();
         setUser(null);
+        setIsGuest(false);
       },
+      continueAsGuest: () => setIsGuest(true),
+      exitGuest: () => setIsGuest(false),
     }),
-    [user, isLoading]
+    [user, isGuest, isLoading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

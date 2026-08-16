@@ -7,6 +7,7 @@ import * as craftsmenApi from "@/api/craftsmen";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
 import { Text, Card, Avatar, Rating, Badge, Header, ScreenContainer, Touchable, Reveal, Skeleton, useToast } from "@/components/ui";
+import { useAuth } from "@/store/AuthContext";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { Craftsman } from "@/types/mico";
 import { SPECIALTY_LABELS, type CraftsmanSpecialty } from "@/types/mico";
@@ -21,6 +22,8 @@ const CATEGORY_FILTERS: [CraftsmanSpecialty | undefined, string][] = [[undefined
 export function CraftsmanListScreen({ navigation }: Props) {
   const { theme } = useTheme();
   const { show } = useToast();
+  const { isGuest, exitGuest } = useAuth();
+  const goBack = () => (navigation.canGoBack() ? navigation.goBack() : exitGuest());
   const [craftsmen, setCraftsmen] = useState<Craftsman[]>([]);
   const [specialty, setSpecialty] = useState<CraftsmanSpecialty | undefined>();
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -75,7 +78,7 @@ export function CraftsmanListScreen({ navigation }: Props) {
   if (isInitialLoading) {
     return (
       <ScreenContainer>
-        <Header title="Usta Listesi" onBack={() => navigation.goBack()} />
+        <Header title="Usta Listesi" onBack={goBack} />
         <View style={{ padding: spacing.lg }}>
           <View style={{ flexDirection: "row", gap: spacing.xs, marginBottom: spacing.lg }}>
             {Array.from({ length: 4 }).map((_, i) => (
@@ -92,7 +95,23 @@ export function CraftsmanListScreen({ navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <Header title="Usta Listesi" onBack={() => navigation.goBack()} />
+      <Header title="Usta Listesi" onBack={goBack} />
+
+      {isGuest ? (
+        <Touchable
+          onPress={exitGuest}
+          haptic
+          style={[styles.guestBanner, { backgroundColor: theme.primary }]}
+        >
+          <Ionicons name="person-circle-outline" size={18} color={theme.onPrimary} />
+          <Text variant="bodySmall" weight="semibold" style={{ color: theme.onPrimary, marginLeft: spacing.xs, flex: 1 }}>
+            Misafir modundasın
+          </Text>
+          <Text variant="bodySmall" weight="bold" style={{ color: theme.onPrimary, textDecorationLine: "underline" }}>
+            Giriş Yap
+          </Text>
+        </Touchable>
+      ) : null}
 
       <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, alignItems: "flex-start" }}>
         <Touchable
@@ -184,4 +203,12 @@ export function CraftsmanListScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   chip: { borderWidth: 1.5, borderRadius: radius.pill, paddingVertical: 8, paddingHorizontal: 14 },
   empty: { alignItems: "center", paddingTop: spacing.xxxl },
+  guestBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+  },
 });

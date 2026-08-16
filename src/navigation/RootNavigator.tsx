@@ -46,7 +46,7 @@ const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
 
 export function RootNavigator() {
-  const { user, isLoading } = useAuth();
+  const { user, isGuest, isLoading } = useAuth();
   const { theme } = useTheme();
 
   const screenOptions = {
@@ -63,9 +63,13 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
-      {user ? (
-        <AppStack.Navigator screenOptions={screenOptions}>
+    <NavigationContainer linking={{ enabled: false, prefixes: [] }}>
+      {user || isGuest ? (
+        <AppStack.Navigator
+          key={user ? "user" : "guest"}
+          screenOptions={screenOptions}
+          initialRouteName={user ? "MainTabs" : "CraftsmanList"}
+        >
           <AppStack.Screen name="MainTabs" component={MainTabs} />
           <AppStack.Screen name="AddBoat" component={AddBoatScreen} />
           <AppStack.Screen name="BoatDetail" component={BoatDetailScreen} />
