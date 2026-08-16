@@ -171,6 +171,7 @@ const styles = StyleSheet.create({
   bubbleRowMine: { alignSelf: "flex-end" },
   bubbleRowTheirs: { alignSelf: "flex-start" },
   bubble: {
+    flexShrink: 1,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: spacing.md,
