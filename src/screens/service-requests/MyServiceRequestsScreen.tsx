@@ -37,6 +37,10 @@ const STATUS_LABEL: Record<ServiceRequestStatus, string> = {
   CANCELLED: "İptal edildi",
 };
 
+const STATUS_ICON: Partial<Record<ServiceRequestStatus, keyof typeof Ionicons.glyphMap>> = {
+  OPEN: "hourglass-outline",
+};
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("tr-TR");
 }
@@ -112,14 +116,14 @@ export function MyServiceRequestsScreen({ navigation }: Props) {
         renderItem={({ item, index }) => (
           <Reveal delay={index * 50}>
             <Card
-              onPress={() => navigation.navigate("Offers", { serviceRequestId: item.id, requestTitle: item.title })}
+              onPress={() => navigation.navigate("Offers", { serviceRequest: item })}
               style={{ marginBottom: spacing.sm }}
             >
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <Text variant="body" weight="bold" style={{ flex: 1 }} numberOfLines={1}>
                   {item.title}
                 </Text>
-                <Badge label={STATUS_LABEL[item.status]} tone={STATUS_TONE[item.status]} />
+                <Badge label={STATUS_LABEL[item.status]} tone={STATUS_TONE[item.status]} icon={STATUS_ICON[item.status]} />
               </View>
               <Text variant="caption" color="secondary" style={{ marginTop: 4 }}>
                 {SPECIALTY_LABELS[item.specialty]} · {item.city} · {formatDate(item.createdAt)}

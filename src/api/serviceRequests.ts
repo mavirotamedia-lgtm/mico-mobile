@@ -24,3 +24,10 @@ export async function cancelServiceRequest(id: string) {
     body: JSON.stringify({ status: "CANCELLED" }),
   });
 }
+
+export async function updateServiceRequest(id: string, input: Partial<CreateServiceRequestInput>) {
+  return apiRequest<ServiceRequest>(`/service-requests/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}

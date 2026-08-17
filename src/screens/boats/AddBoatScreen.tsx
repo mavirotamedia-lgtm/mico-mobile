@@ -11,6 +11,7 @@ import { radius, spacing } from "@/theme/tokens";
 import { Text, Button, Input, Header, BoatVisual, ScreenContainer, useToast } from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import { ApiError } from "@/api/client";
+import { resolveMediaUrl } from "@/lib/media";
 import type { BoatType } from "@/types/api";
 
 type Props = NativeStackScreenProps<AppStackParamList, "AddBoat">;
@@ -75,7 +76,7 @@ export function AddBoatScreen({ navigation, route }: Props) {
           setBuildYear(boat.buildYear ? String(boat.buildYear) : "");
           setEngineType(boat.engineType ?? "");
           setHomePort(boat.homePort ?? "");
-          setPhotoUri(boat.image ?? null);
+          setPhotoUri(resolveMediaUrl(boat.image) ?? null);
           setUploadedImageUrl(boat.image ?? null);
         } catch (e) {
           show(e instanceof ApiError ? e.message : "Tekne bilgileri yüklenemedi.", "error");
@@ -112,7 +113,7 @@ export function AddBoatScreen({ navigation, route }: Props) {
     setUploadedImageUrl(null);
     setIsUploadingPhoto(true);
     try {
-      const url = await uploadImage(uri);
+      const url = await uploadImage(uri, result.assets[0].mimeType);
       setUploadedImageUrl(url);
     } catch (e) {
       show(e instanceof ApiError ? e.message : "Fotoğraf yüklenemedi.", "error");

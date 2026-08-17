@@ -1,5 +1,6 @@
 import { Image, type StyleProp, type ImageStyle } from "react-native";
 import type { BoatType } from "@/types/api";
+import { resolveMediaUrl } from "@/lib/media";
 
 const BOAT_TYPE_IMAGES: Record<BoatType, string> = {
   SAILBOAT: "https://images.unsplash.com/photo-1540946485063-a40da27545f8?w=800&q=70",
@@ -16,5 +17,5 @@ type Props = {
 
 /** Tekne fotografi varsa onu, yoksa tekne tipine uygun bir gorseli gosterir. */
 export function BoatVisual({ image, type, style }: Props) {
-  return <Image source={{ uri: image || BOAT_TYPE_IMAGES[type] }} style={style} resizeMode="cover" />;
+  return <Image source={{ uri: resolveMediaUrl(image) || BOAT_TYPE_IMAGES[type] }} style={style} resizeMode="cover" />;
 }

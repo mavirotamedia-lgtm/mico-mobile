@@ -1,11 +1,15 @@
 import { useCallback, useState } from "react";
-import { FlatList, View, StyleSheet, RefreshControl, Alert } from "react-native";
+import { FlatList, View, Image, Pressable, StyleSheet, RefreshControl, ActivityIndicator, Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import * as offersApi from "@/api/offers";
 import * as craftsmenApi from "@/api/craftsmen";
 import * as conversationsApi from "@/api/conversations";
+import * as serviceRequestsApi from "@/api/serviceRequests";
+import { uploadImage } from "@/api/uploads";
+import { resolveMediaUrl } from "@/lib/media";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
 import { Text, Card, Avatar, Rating, Badge, Button, Header, ScreenContainer, Reveal, Skeleton, useToast } from "@/components/ui";
@@ -38,10 +42,12 @@ const STATUS_LABEL: Record<ServiceOffer["status"], string> = {
 };
 
 export function OffersScreen({ route, navigation }: Props) {
-  const { serviceRequestId, requestTitle } = route.params;
+  const { serviceRequest } = route.params;
   const { theme } = useTheme();
   const { show } = useToast();
   const [offers, setOffers] = useState<OfferWithCraftsman[]>([]);
+  const [photos, setPhotos] = useState<string[]>(serviceRequest.photos);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [busy, setBusy] = useState<BusyAction>(null);
@@ -50,7 +56,7 @@ export function OffersScreen({ route, navigation }: Props) {
     async (isRefresh = false) => {
       if (isRefresh) setIsRefreshing(true);
       try {
-        const res = await offersApi.listOffersForRequest(serviceRequestId);
+        const res = await offersApi.listOffersForRequest(serviceRequest.id);
         const withCraftsmen = await Promise.all(
           res.map(async (offer) => {
             try {
@@ -69,7 +75,7 @@ export function OffersScreen({ route, navigation }: Props) {
         setIsRefreshing(false);
       }
     },
-    [serviceRequestId, show]
+    [serviceRequest.id, show]
   );
 
   useFocusEffect(
@@ -77,6 +83,34 @@ export function OffersScreen({ route, navigation }: Props) {
       load();
     }, [load])
   );
+
+  async function handleAddPhotos() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      show("Fotoğraf seçmek için galeri izni gerekiyor.", "error");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsMultipleSelection: true,
+      quality: 0.7,
+    });
+    if (result.canceled || result.assets.length === 0) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const urls = await Promise.all(result.assets.map((asset) => uploadImage(asset.uri, asset.mimeType)));
+      const updatedPhotos = [...photos, ...urls];
+      await serviceRequestsApi.updateServiceRequest(serviceRequest.id, { photos: updatedPhotos });
+      setPhotos(updatedPhotos);
+      show("Fotoğraflar eklendi", "success");
+    } catch (e) {
+      show(e instanceof ApiError ? e.message : "Fotoğraf eklenemedi.", "error");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  }
 
   function handleAccept(offer: OfferWithCraftsman) {
     Alert.alert(
@@ -122,7 +156,7 @@ export function OffersScreen({ route, navigation }: Props) {
   if (isInitialLoading) {
     return (
       <ScreenContainer>
-        <Header title={requestTitle ?? "Gelen Teklifler"} onBack={() => navigation.goBack()} />
+        <Header title={serviceRequest.title} onBack={() => navigation.goBack()} />
         <View style={{ padding: spacing.lg }}>
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} width="100%" height={120} radius={radius.xl} style={{ marginBottom: spacing.sm }} />
@@ -134,13 +168,32 @@ export function OffersScreen({ route, navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <Header title={requestTitle ?? "Gelen Teklifler"} onBack={() => navigation.goBack()} />
+      <Header title={serviceRequest.title} onBack={() => navigation.goBack()} />
 
       <FlatList
         data={offers}
         keyExtractor={(item) => item.id}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => load(true)} tintColor={theme.primary} />}
         contentContainerStyle={{ padding: spacing.lg, flexGrow: 1 }}
+        ListHeaderComponent={
+          <View style={{ marginBottom: spacing.lg }}>
+            <Text variant="bodySmall" weight="semibold" color="secondary" style={{ marginBottom: 6 }}>
+              Arıza / Motor Fotoğrafları
+            </Text>
+            <View style={styles.photoRow}>
+              {photos.map((url) => (
+                <Image key={url} source={{ uri: resolveMediaUrl(url) }} style={[styles.photoThumb, { borderColor: theme.border }]} resizeMode="cover" />
+              ))}
+              <Pressable onPress={handleAddPhotos} style={[styles.photoAdd, { borderColor: theme.border }]}>
+                {isUploadingPhoto ? (
+                  <ActivityIndicator color={theme.primary} size="small" />
+                ) : (
+                  <Ionicons name="camera-outline" size={20} color={theme.textSecondary} />
+                )}
+              </Pressable>
+            </View>
+          </View>
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="hourglass-outline" size={36} color={theme.textSecondary} />
@@ -214,4 +267,15 @@ const styles = StyleSheet.create({
   empty: { alignItems: "center", paddingTop: spacing.xxxl },
   statsRow: { flexDirection: "row", marginTop: spacing.sm },
   actionsRow: { flexDirection: "row", marginTop: spacing.sm },
+  photoRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
+  photoThumb: { width: 64, height: 64, borderRadius: radius.md, borderWidth: 1.5 },
+  photoAdd: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

@@ -3,6 +3,10 @@ import type { ApiErrorBody, AuthResult } from "@/types/api";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://www.mavirotamarine.com/api/v1";
 
+// Yuklenen medya (/uploads/...) API'nin kendisinde degil, sitenin kokunde
+// serve ediliyor — BASE_URL'deki /api/v1 son ekini atip host'u ayikliyoruz.
+export const API_ORIGIN = BASE_URL.replace(/\/api\/v1\/?$/, "");
+
 export class ApiError extends Error {
   status: number;
   details?: unknown;

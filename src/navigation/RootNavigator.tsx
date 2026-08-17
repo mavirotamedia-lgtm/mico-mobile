@@ -36,7 +36,7 @@ export type AppStackParamList = {
   CraftsmanDetail: { craftsmanId: string };
   IncomingRequests: undefined;
   SubmitOffer: { serviceRequest: ServiceRequest };
-  Offers: { serviceRequestId: string; requestTitle?: string };
+  Offers: { serviceRequest: ServiceRequest };
   Chat: { conversationId: string; otherUserName: string };
   Conversations: undefined;
   Notifications: undefined;

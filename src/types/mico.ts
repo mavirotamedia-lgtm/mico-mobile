@@ -56,6 +56,7 @@ export type CreateServiceRequestInput = {
   specialty: CraftsmanSpecialty;
   title: string;
   description: string;
+  photos?: string[];
   city: string;
   marina?: string;
   latitude?: number;

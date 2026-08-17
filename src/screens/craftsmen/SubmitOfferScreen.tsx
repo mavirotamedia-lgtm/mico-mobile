@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, Image, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as offersApi from "@/api/offers";
-import { spacing } from "@/theme/tokens";
+import { radius, spacing } from "@/theme/tokens";
 import { Text, Card, Badge, Button, Input, Header, ScreenContainer, useToast } from "@/components/ui";
+import { useTheme } from "@/theme/ThemeContext";
+import { resolveMediaUrl } from "@/lib/media";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import { SPECIALTY_LABELS } from "@/types/mico";
 import { ApiError } from "@/api/client";
@@ -12,6 +14,7 @@ type Props = NativeStackScreenProps<AppStackParamList, "SubmitOffer">;
 
 export function SubmitOfferScreen({ route, navigation }: Props) {
   const { serviceRequest } = route.params;
+  const { theme } = useTheme();
   const { show } = useToast();
   const [price, setPrice] = useState("");
   const [message, setMessage] = useState("");
@@ -57,6 +60,13 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
             {SPECIALTY_LABELS[serviceRequest.specialty]} · {serviceRequest.city}
             {serviceRequest.marina ? ` · ${serviceRequest.marina}` : ""}
           </Text>
+          {serviceRequest.photos.length > 0 ? (
+            <View style={styles.photoRow}>
+              {serviceRequest.photos.map((url) => (
+                <Image key={url} source={{ uri: resolveMediaUrl(url) }} style={[styles.photoThumb, { borderColor: theme.border }]} resizeMode="cover" />
+              ))}
+            </View>
+          ) : null}
         </Card>
 
         <Input
@@ -96,3 +106,8 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  photoRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginTop: spacing.sm },
+  photoThumb: { width: 64, height: 64, borderRadius: radius.md, borderWidth: 1.5 },
+});
