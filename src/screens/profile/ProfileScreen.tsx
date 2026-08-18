@@ -37,7 +37,10 @@ export function ProfileScreen({ navigation }: Props) {
     { icon: "construct-outline", label: "Usta Bul", onPress: () => navigation.navigate("CraftsmanList") },
     { icon: "chatbubbles-outline", label: "Mesajlarım", onPress: () => navigation.navigate("Conversations") },
     ...(isCraftsman
-      ? [{ icon: "briefcase-outline" as const, label: "Usta Panelim", onPress: () => navigation.navigate("IncomingRequests") }]
+      ? [
+          { icon: "briefcase-outline" as const, label: "Usta Panelim", onPress: () => navigation.navigate("IncomingRequests") },
+          { icon: "person-circle-outline" as const, label: "Usta Profilim", onPress: () => navigation.navigate("CraftsmanProfile") },
+        ]
       : []),
   ];
 

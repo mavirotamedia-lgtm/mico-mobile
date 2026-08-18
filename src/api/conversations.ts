@@ -19,3 +19,7 @@ export async function sendMessage(conversationId: string, body: string) {
     body: JSON.stringify({ body }),
   });
 }
+
+export async function markConversationAsRead(conversationId: string) {
+  return apiRequest<{ updatedCount: number }>(`/conversations/${conversationId}/read`, { method: "POST" });
+}

@@ -20,3 +20,7 @@ export async function getCraftsman(id: string) {
 export async function getMyCraftsmanProfile() {
   return apiRequest<Craftsman>("/craftsmen/me");
 }
+
+export async function updateMyCraftsmanProfile(input: { avatar?: string }) {
+  return apiRequest<Craftsman>("/craftsmen/me", { method: "PATCH", body: JSON.stringify(input) });
+}

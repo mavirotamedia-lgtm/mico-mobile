@@ -46,14 +46,26 @@ export function ChatScreen({ route, navigation }: Props) {
     }
   }, [conversationId]);
 
+  // Ekran her odaklandiginda ve her poll'de karsi tarafin mesajlarini okundu
+  // isaretler — WhatsApp'taki gibi mavi tik icin bu cagrinin gitmesi sart.
+  const markRead = useCallback(() => {
+    conversationsApi.markConversationAsRead(conversationId).catch(() => {
+      // sessizce yut — okundu isareti kritik degil, bir sonraki poll'de tekrar denenir
+    });
+  }, [conversationId]);
+
   useFocusEffect(
     useCallback(() => {
       load();
-      pollRef.current = setInterval(load, POLL_INTERVAL_MS);
+      markRead();
+      pollRef.current = setInterval(() => {
+        load();
+        markRead();
+      }, POLL_INTERVAL_MS);
       return () => {
         if (pollRef.current) clearInterval(pollRef.current);
       };
-    }, [load])
+    }, [load, markRead])
   );
 
   // Yeni mesaj geldiginde (kendi gonderdigimiz ya da karsi tarafinki, polling
@@ -126,12 +138,22 @@ export function ChatScreen({ route, navigation }: Props) {
                   <Text variant="body" style={{ color: isMine ? theme.onPrimary : theme.textPrimary }}>
                     {item.body}
                   </Text>
-                  <Text
-                    variant="caption"
-                    style={{ color: isMine ? theme.textOnDarkMuted : theme.textSecondary, marginTop: 4, alignSelf: "flex-end" }}
-                  >
-                    {formatTime(item.createdAt)}
-                  </Text>
+                  <View style={styles.metaRow}>
+                    <Text
+                      variant="caption"
+                      style={{ color: isMine ? theme.textOnDarkMuted : theme.textSecondary }}
+                    >
+                      {formatTime(item.createdAt)}
+                    </Text>
+                    {isMine ? (
+                      <Ionicons
+                        name={item.readAt ? "checkmark-done" : "checkmark"}
+                        size={14}
+                        color={item.readAt ? "#53BDEB" : theme.textOnDarkMuted}
+                        style={{ marginLeft: 4 }}
+                      />
+                    ) : null}
+                  </View>
                 </View>
               </View>
             );
@@ -183,6 +205,7 @@ const styles = StyleSheet.create({
   },
   bubbleTailMine: { borderBottomRightRadius: 4 },
   bubbleTailTheirs: { borderBottomLeftRadius: 4 },
+  metaRow: { flexDirection: "row", alignItems: "center", alignSelf: "flex-end", marginTop: 4 },
   inputBar: {
     flexDirection: "row",
     alignItems: "center",
