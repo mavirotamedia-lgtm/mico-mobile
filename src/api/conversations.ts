@@ -13,10 +13,10 @@ export async function listMessages(conversationId: string) {
   return apiRequest<Paginated<Message>>(`/conversations/${conversationId}/messages`);
 }
 
-export async function sendMessage(conversationId: string, body: string) {
+export async function sendMessage(conversationId: string, input: { body?: string; imageUrl?: string }) {
   return apiRequest<Message>(`/conversations/${conversationId}/messages`, {
     method: "POST",
-    body: JSON.stringify({ body }),
+    body: JSON.stringify(input),
   });
 }
 

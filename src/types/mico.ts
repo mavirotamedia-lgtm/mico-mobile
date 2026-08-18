@@ -94,6 +94,7 @@ export type Message = {
   conversationId: string;
   senderId: string;
   body: string;
+  imageUrl: string | null;
   readAt: string | null;
   createdAt: string;
 };

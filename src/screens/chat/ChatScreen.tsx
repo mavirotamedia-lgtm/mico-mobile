@@ -1,9 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, View, StyleSheet, KeyboardAvoidingView, Platform, TextInput } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  View,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  TextInput,
+  Image,
+  Modal,
+} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import * as ImagePicker from "expo-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import * as conversationsApi from "@/api/conversations";
+import { uploadImage } from "@/api/uploads";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
@@ -29,6 +41,8 @@ export function ChatScreen({ route, navigation }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const listRef = useRef<FlatList<Message>>(null);
   const lastMessageCount = useRef(0);
@@ -83,7 +97,7 @@ export function ChatScreen({ route, navigation }: Props) {
     if (!body) return;
     setIsSending(true);
     try {
-      await conversationsApi.sendMessage(conversationId, body);
+      await conversationsApi.sendMessage(conversationId, { body });
       setDraft("");
       load();
     } catch (e) {
@@ -92,6 +106,28 @@ export function ChatScreen({ route, navigation }: Props) {
       show(e instanceof ApiError ? e.message : "Mesaj gönderilemedi.", "error");
     } finally {
       setIsSending(false);
+    }
+  }
+
+  async function handlePickImage() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      show("Görsel seçmek için galeri izni gerekiyor.", "error");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
+    if (result.canceled || !result.assets[0]) return;
+
+    setIsUploadingImage(true);
+    try {
+      const url = await uploadImage(result.assets[0].uri, result.assets[0].mimeType);
+      await conversationsApi.sendMessage(conversationId, { imageUrl: url });
+      load();
+    } catch (e) {
+      show(e instanceof ApiError ? e.message : "Görsel gönderilemedi.", "error");
+    } finally {
+      setIsUploadingImage(false);
     }
   }
 
@@ -135,9 +171,19 @@ export function ChatScreen({ route, navigation }: Props) {
                     },
                   ]}
                 >
-                  <Text variant="body" style={{ color: isMine ? theme.onPrimary : theme.textPrimary }}>
-                    {item.body}
-                  </Text>
+                  {item.imageUrl ? (
+                    <Touchable onPress={() => setFullscreenImage(item.imageUrl)}>
+                      <Image source={{ uri: item.imageUrl }} style={styles.chatImage} resizeMode="cover" />
+                    </Touchable>
+                  ) : null}
+                  {item.body ? (
+                    <Text
+                      variant="body"
+                      style={{ color: isMine ? theme.onPrimary : theme.textPrimary, marginTop: item.imageUrl ? spacing.xs : 0 }}
+                    >
+                      {item.body}
+                    </Text>
+                  ) : null}
                   <View style={styles.metaRow}>
                     <Text
                       variant="caption"
@@ -162,6 +208,18 @@ export function ChatScreen({ route, navigation }: Props) {
         )}
 
         <View style={[styles.inputBar, { borderTopColor: theme.border, backgroundColor: theme.surface }]}>
+          <Touchable
+            onPress={handlePickImage}
+            disabled={isUploadingImage}
+            haptic
+            style={[styles.attachButton, { opacity: isUploadingImage ? 0.5 : 1 }]}
+          >
+            {isUploadingImage ? (
+              <ActivityIndicator size="small" color={theme.primary} />
+            ) : (
+              <Ionicons name="image-outline" size={22} color={theme.primary} />
+            )}
+          </Touchable>
           <View style={[styles.textInputWrapper, { backgroundColor: theme.background, borderColor: theme.border }]}>
             <TextInput
               value={draft}
@@ -183,6 +241,17 @@ export function ChatScreen({ route, navigation }: Props) {
           </Touchable>
         </View>
       </KeyboardAvoidingView>
+
+      <Modal visible={!!fullscreenImage} transparent animationType="fade" onRequestClose={() => setFullscreenImage(null)}>
+        <Touchable
+          style={styles.lightboxBackdrop}
+          onPress={() => setFullscreenImage(null)}
+        >
+          {fullscreenImage ? (
+            <Image source={{ uri: fullscreenImage }} style={styles.lightboxImage} resizeMode="contain" />
+          ) : null}
+        </Touchable>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -221,4 +290,13 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   sendButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  attachButton: { width: 40, height: 40, alignItems: "center", justifyContent: "center", marginRight: 2 },
+  chatImage: { width: 200, height: 200, borderRadius: radius.md },
+  lightboxBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.92)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lightboxImage: { width: "100%", height: "80%" },
 });
