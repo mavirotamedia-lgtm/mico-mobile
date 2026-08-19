@@ -71,7 +71,7 @@ export function ProfileScreen({ navigation }: Props) {
               <Text variant="h2" weight="extrabold" numberOfLines={1}>
                 {user?.name}
               </Text>
-              <Text variant="bodySmall" color="secondary" numberOfLines={1}>
+              <Text variant="bodySmall" color="secondary">
                 {user?.email}
               </Text>
             </View>
