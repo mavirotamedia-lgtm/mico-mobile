@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, View, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -24,12 +25,17 @@ export function ProfileScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [isCraftsman, setIsCraftsman] = useState(false);
 
-  useEffect(() => {
-    craftsmenApi
-      .getMyCraftsmanProfile()
-      .then(() => setIsCraftsman(true))
-      .catch(() => setIsCraftsman(false));
-  }, []);
+  // useFocusEffect (mount-only useEffect degil): Usta Ol formunu doldurup
+  // geri donuldugunde bu ekran menusunun (Usta Panelim/Usta Profilim) hemen
+  // gorunmesi icin durum her odaklanmada tazelenmeli.
+  useFocusEffect(
+    useCallback(() => {
+      craftsmenApi
+        .getMyCraftsmanProfile()
+        .then(() => setIsCraftsman(true))
+        .catch(() => setIsCraftsman(false));
+    }, [])
+  );
 
   const menuItems: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }[] = [
     { icon: "boat-outline", label: "Teknelerim", onPress: () => navigation.navigate("MyBoat") },
@@ -41,7 +47,7 @@ export function ProfileScreen({ navigation }: Props) {
           { icon: "briefcase-outline" as const, label: "Usta Panelim", onPress: () => navigation.navigate("IncomingRequests") },
           { icon: "person-circle-outline" as const, label: "Usta Profilim", onPress: () => navigation.navigate("CraftsmanProfile") },
         ]
-      : []),
+      : [{ icon: "hammer-outline" as const, label: "Usta Ol", onPress: () => navigation.navigate("BecomeCraftsman") }]),
   ];
 
   function handleLogout() {

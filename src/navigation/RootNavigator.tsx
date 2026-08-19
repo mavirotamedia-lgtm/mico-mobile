@@ -15,6 +15,7 @@ import { CraftsmanListScreen } from "@/screens/craftsmen/CraftsmanListScreen";
 import { CraftsmanDetailScreen } from "@/screens/craftsmen/CraftsmanDetailScreen";
 import { IncomingRequestsScreen } from "@/screens/craftsmen/IncomingRequestsScreen";
 import { CraftsmanProfileScreen } from "@/screens/craftsmen/CraftsmanProfileScreen";
+import { BecomeCraftsmanScreen } from "@/screens/craftsmen/BecomeCraftsmanScreen";
 import { SubmitOfferScreen } from "@/screens/craftsmen/SubmitOfferScreen";
 import { OffersScreen } from "@/screens/offers/OffersScreen";
 import { ChatScreen } from "@/screens/chat/ChatScreen";
@@ -37,6 +38,7 @@ export type AppStackParamList = {
   CraftsmanDetail: { craftsmanId: string };
   IncomingRequests: undefined;
   CraftsmanProfile: undefined;
+  BecomeCraftsman: undefined;
   SubmitOffer: { serviceRequest: ServiceRequest };
   Offers: { serviceRequest: ServiceRequest };
   Chat: { conversationId: string; otherUserName: string };
@@ -80,6 +82,7 @@ export function RootNavigator() {
           <AppStack.Screen name="CraftsmanDetail" component={CraftsmanDetailScreen} />
           <AppStack.Screen name="IncomingRequests" component={IncomingRequestsScreen} />
           <AppStack.Screen name="CraftsmanProfile" component={CraftsmanProfileScreen} />
+          <AppStack.Screen name="BecomeCraftsman" component={BecomeCraftsmanScreen} />
           <AppStack.Screen name="SubmitOffer" component={SubmitOfferScreen} />
           <AppStack.Screen name="Offers" component={OffersScreen} />
           <AppStack.Screen name="Chat" component={ChatScreen} />

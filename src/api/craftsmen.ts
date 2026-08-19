@@ -21,6 +21,21 @@ export async function getMyCraftsmanProfile() {
   return apiRequest<Craftsman>("/craftsmen/me");
 }
 
+export type CreateCraftsmanInput = {
+  specialty: CraftsmanSpecialty;
+  businessName?: string;
+  bio?: string;
+  city: string;
+  marina?: string;
+  latitude?: number;
+  longitude?: number;
+  experienceYears?: number;
+};
+
+export async function createCraftsmanProfile(input: CreateCraftsmanInput) {
+  return apiRequest<Craftsman>("/craftsmen", { method: "POST", body: JSON.stringify(input) });
+}
+
 export async function updateMyCraftsmanProfile(input: { avatar?: string }) {
   return apiRequest<Craftsman>("/craftsmen/me", { method: "PATCH", body: JSON.stringify(input) });
 }
