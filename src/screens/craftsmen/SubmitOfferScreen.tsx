@@ -116,7 +116,8 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
 
         {offerCredits !== null && !hasOfferCredits ? (
           <Text variant="bodySmall" color="danger" style={{ marginTop: spacing.xs, marginBottom: spacing.sm }}>
-            Teklif hakkınız tükendi — yeni teklif verebilmek için admin ile iletişime geçin.
+            Teklif hakkınız tükendi — yeni teklif verebilmek için teklif hakkı satın alabileceksiniz. Bu özellik
+            yakında aktif olacak, o zamana kadar admin ile iletişime geçebilirsiniz.
           </Text>
         ) : null}
 
