@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, View, Image, StyleSheet } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as offersApi from "@/api/offers";
+import * as craftsmenApi from "@/api/craftsmen";
 import { radius, spacing } from "@/theme/tokens";
 import { Text, Card, Badge, Button, Input, Header, ScreenContainer, useToast } from "@/components/ui";
 import { useTheme } from "@/theme/ThemeContext";
 import { resolveMediaUrl } from "@/lib/media";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
-import { SPECIALTY_LABELS } from "@/types/mico";
+import { SPECIALTY_LABELS, OFFER_TOKEN_COST } from "@/types/mico";
 import { ApiError } from "@/api/client";
 
 type Props = NativeStackScreenProps<AppStackParamList, "SubmitOffer">;
@@ -20,6 +22,18 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      craftsmenApi
+        .getMyCraftsmanProfile()
+        .then((c) => setTokenBalance(c.tokenBalance))
+        .catch(() => setTokenBalance(null));
+    }, [])
+  );
+
+  const hasEnoughTokens = tokenBalance !== null && tokenBalance >= OFFER_TOKEN_COST;
 
   async function handleSubmit() {
     setError(null);
@@ -89,6 +103,21 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
           style={{ minHeight: 90, textAlignVertical: "top" }}
         />
 
+        <View style={[styles.tokenRow, { borderColor: theme.border }]}>
+          <Text variant="bodySmall" color="secondary">
+            Bu teklif <Text variant="bodySmall" weight="bold">{OFFER_TOKEN_COST} token</Text>'a mal olacak
+          </Text>
+          <Text variant="bodySmall" weight="semibold" color={hasEnoughTokens ? "secondary" : "danger"}>
+            Bakiyen: {tokenBalance ?? "..."}
+          </Text>
+        </View>
+
+        {tokenBalance !== null && !hasEnoughTokens ? (
+          <Text variant="bodySmall" color="danger" style={{ marginTop: spacing.xs, marginBottom: spacing.sm }}>
+            Yetersiz bakiye — teklif vermek için en az {OFFER_TOKEN_COST} token gerekiyor.
+          </Text>
+        ) : null}
+
         {error ? (
           <Text variant="bodySmall" color="danger" style={{ marginBottom: spacing.sm }}>
             {error}
@@ -96,10 +125,15 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
         ) : null}
 
         <Button
-          label="Teklifi Gönder"
+          label={
+            tokenBalance !== null && !hasEnoughTokens
+              ? "Yetersiz Bakiye"
+              : `Teklif Gönder (-${OFFER_TOKEN_COST} Token) | Kalan: ${tokenBalance !== null ? tokenBalance - OFFER_TOKEN_COST : "..."}`
+          }
+          variant={tokenBalance !== null && !hasEnoughTokens ? "danger" : "primary"}
           onPress={handleSubmit}
           loading={isSubmitting}
-          disabled={!isPriceValid}
+          disabled={!isPriceValid || tokenBalance === null || !hasEnoughTokens}
           style={{ marginTop: spacing.xs }}
         />
       </ScrollView>
@@ -110,4 +144,14 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   photoRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginTop: spacing.sm },
   photoThumb: { width: 64, height: 64, borderRadius: radius.md, borderWidth: 1.5 },
+  tokenRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.sm,
+  },
 });

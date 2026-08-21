@@ -27,11 +27,15 @@ export type Craftsman = {
   avatar: string | null;
   isVerified: boolean;
   status: "PENDING" | "APPROVED" | "SUSPENDED" | "REJECTED";
+  tokenBalance: number;
   ratingAvg: number;
   ratingCount: number;
   createdAt: string;
   distanceKm: number | null;
 };
+
+/** Bir teklif vermenin maliyeti (token) — backend service-offers/service.ts OFFER_TOKEN_COST ile eslesmeli. */
+export const OFFER_TOKEN_COST = 5;
 
 export type ServiceRequestStatus = "OPEN" | "OFFER_RECEIVED" | "ASSIGNED" | "COMPLETED" | "CANCELLED";
 
