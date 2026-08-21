@@ -24,6 +24,10 @@ export function IncomingRequestsScreen({ navigation }: Props) {
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // Admin henuz onaylamamis ustalar icin backend 403 doner — bunu genel bir
+  // hata toast'i yerine ayri, anlasilir bir "onay bekliyor" durumu olarak
+  // gosteriyoruz (aksi halde bos liste + belirsiz bir hata mesaji goruyorlardi).
+  const [isPendingApproval, setIsPendingApproval] = useState(false);
 
   const load = useCallback(
     async (isRefresh = false) => {
@@ -31,8 +35,13 @@ export function IncomingRequestsScreen({ navigation }: Props) {
       try {
         const res = await serviceRequestsApi.listNearbyServiceRequests();
         setRequests(res.items);
+        setIsPendingApproval(false);
       } catch (e) {
-        show(e instanceof ApiError ? e.message : "Talepler yüklenemedi.", "error");
+        if (e instanceof ApiError && e.status === 403) {
+          setIsPendingApproval(true);
+        } else {
+          show(e instanceof ApiError ? e.message : "Talepler yüklenemedi.", "error");
+        }
       } finally {
         setIsInitialLoading(false);
         setIsRefreshing(false);
@@ -55,6 +64,23 @@ export function IncomingRequestsScreen({ navigation }: Props) {
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} width="100%" height={84} radius={radius.xl} style={{ marginBottom: spacing.sm }} />
           ))}
+        </View>
+      </ScreenContainer>
+    );
+  }
+
+  if (isPendingApproval) {
+    return (
+      <ScreenContainer>
+        <Header title="Usta Panelim" onBack={() => navigation.goBack()} />
+        <View style={styles.empty}>
+          <Ionicons name="time-outline" size={36} color={theme.textSecondary} />
+          <Text variant="body" weight="semibold" style={{ marginTop: spacing.sm, textAlign: "center" }}>
+            Başvurun inceleniyor
+          </Text>
+          <Text variant="bodySmall" color="secondary" style={{ marginTop: 4, textAlign: "center", paddingHorizontal: spacing.lg }}>
+            Admin onayından sonra buradan gelen talepleri görüp teklif verebileceksin.
+          </Text>
         </View>
       </ScreenContainer>
     );
