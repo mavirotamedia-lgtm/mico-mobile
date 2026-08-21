@@ -10,7 +10,7 @@ import { useAuth } from "@/store/AuthContext";
 import type { AuthStackParamList } from "@/navigation/RootNavigator";
 
 const BOAT_IMAGE =
-  "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1200&q=70";
+  "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1400&q=75";
 
 const FEATURES: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
   { icon: "shield-checkmark-outline", label: "Değerlendirilmiş\nUstalar" },
@@ -27,6 +27,10 @@ export function SplashScreen({ navigation }: Props) {
   const brandOpacity = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const contentTranslateY = useRef(new Animated.Value(16)).current;
+  // Ken Burns hissi: arka plan görseli ekran boyunca yavaşça büyüyüp kayarak
+  // statik bir fotoğrafa hareket katıyor (gerçek video yerine hafif bir hile).
+  const imageScale = useRef(new Animated.Value(1)).current;
+  const imageTranslateX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
@@ -36,11 +40,23 @@ export function SplashScreen({ navigation }: Props) {
         Animated.spring(contentTranslateY, { toValue: 0, useNativeDriver: true, speed: 14, bounciness: 4 }),
       ]),
     ]).start();
-  }, [brandOpacity, contentOpacity, contentTranslateY]);
+
+    Animated.parallel([
+      Animated.timing(imageScale, { toValue: 1.14, duration: 18000, useNativeDriver: true }),
+      Animated.timing(imageTranslateX, { toValue: -18, duration: 18000, useNativeDriver: true }),
+    ]).start();
+  }, [brandOpacity, contentOpacity, contentTranslateY, imageScale, imageTranslateX]);
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.navy950 }}>
-      <Image source={{ uri: BOAT_IMAGE }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+      <Animated.Image
+        source={{ uri: BOAT_IMAGE }}
+        style={[
+          StyleSheet.absoluteFillObject,
+          { transform: [{ scale: imageScale }, { translateX: imageTranslateX }] },
+        ]}
+        resizeMode="cover"
+      />
       {/* Splash, marka anı olarak her zaman koyu hero kullanır — açık/koyu tema
           burada değil, altındaki Login/Register kartında devreye girer.
           Gunbatimi hissi icin sicak amber bir orta katman eklendi. */}
