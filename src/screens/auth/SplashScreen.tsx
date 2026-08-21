@@ -15,7 +15,7 @@ import type { AuthStackParamList } from "@/navigation/RootNavigator";
 const SPLASH_VIDEO = require("../../../assets/video/splash-boat-loop.mp4");
 
 const FEATURES: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
-  { icon: "shield-checkmark-outline", label: "Değerlendirilmiş\nUstalar" },
+  { icon: "shield-checkmark-outline", label: "Onaylı\nUstalar" },
   { icon: "flash-outline", label: "Hızlı\nServis" },
   { icon: "time-outline", label: "7/24\nDestek" },
 ];
