@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
-import { Animated, View, StyleSheet, Image } from "react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Animated, View, StyleSheet, Image, Easing } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -16,8 +17,46 @@ const SPLASH_VIDEO = require("../../../assets/video/splash-boat-loop.mp4");
 const FEATURES: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
   { icon: "shield-checkmark-outline", label: "Değerlendirilmiş\nUstalar" },
   { icon: "flash-outline", label: "Hızlı\nServis" },
-  { icon: "diamond-outline", label: "Tokenle\nGüvende" },
+  { icon: "time-outline", label: "7/24\nDestek" },
 ];
+
+/** Logo/wordmark/slogan grubunun üzerinden periyodik olarak geçen ışık huzmesi. */
+function BrandShimmer({ children }: { children: ReactNode }) {
+  const [width, setWidth] = useState(0);
+  const sweep = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!width) return;
+    sweep.setValue(0);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(1700),
+        Animated.timing(sweep, { toValue: 1, duration: 1100, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(sweep, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [width, sweep]);
+
+  const translateX = sweep.interpolate({ inputRange: [0, 1], outputRange: [-width, width] });
+
+  return (
+    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ alignItems: "center", overflow: "hidden" }}>
+      {children}
+      {width > 0 ? (
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { transform: [{ translateX }, { rotate: "14deg" }] }]}>
+          <LinearGradient
+            colors={["transparent", "rgba(255,255,255,0.55)", "transparent"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{ width: width * 0.3, height: "160%", marginTop: "-30%" }}
+          />
+        </Animated.View>
+      ) : null}
+    </View>
+  );
+}
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Splash">;
 
@@ -61,11 +100,13 @@ export function SplashScreen({ navigation }: Props) {
 
       <View style={[styles.content, { paddingTop: insets.top + spacing.xxl, paddingBottom: insets.bottom + spacing.xl }]}>
         <Animated.View style={{ opacity: brandOpacity, alignItems: "center" }}>
-          <Image source={require("../../../assets/branding/logo-icon.png")} style={styles.logoIcon} resizeMode="contain" />
-          <Image source={require("../../../assets/branding/logo-wordmark.png")} style={styles.logoWordmark} resizeMode="contain" />
-          <Text variant="body" color="onDark" weight="semibold" style={{ marginTop: spacing.sm }}>
-            Denizde <Text color="accent" weight="bold">yalnız</Text> değilsin.
-          </Text>
+          <BrandShimmer>
+            <Image source={require("../../../assets/branding/logo-icon.png")} style={styles.logoIcon} resizeMode="contain" />
+            <Image source={require("../../../assets/branding/logo-wordmark.png")} style={styles.logoWordmark} resizeMode="contain" />
+            <Text variant="body" color="onDark" weight="semibold" style={{ marginTop: spacing.sm }}>
+              Denizde <Text color="accent" weight="bold">yalnız</Text> değilsin.
+            </Text>
+          </BrandShimmer>
         </Animated.View>
 
         <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }], width: "100%" }}>
@@ -96,9 +137,14 @@ export function SplashScreen({ navigation }: Props) {
             {FEATURES.map((f) => (
               <View key={f.label} style={styles.featureItem}>
                 <View style={styles.featureIconWrap}>
-                  <Ionicons name={f.icon} size={18} color={palette.gold300} />
+                  <Ionicons name={f.icon} size={20} color={palette.gold300} />
                 </View>
-                <Text variant="caption" color="onDarkMuted" style={{ textAlign: "center", marginTop: 6 }}>
+                <Text
+                  variant="caption"
+                  weight="bold"
+                  color="onDark"
+                  style={{ textAlign: "center", marginTop: spacing.xs, letterSpacing: 0.3 }}
+                >
                   {f.label}
                 </Text>
               </View>
@@ -131,13 +177,29 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     marginTop: spacing.lg,
   },
-  featureItem: { alignItems: "center", width: 96 },
+  featureItem: {
+    alignItems: "center",
+    width: 100,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radius.lg,
+    backgroundColor: "rgba(6,15,32,0.4)",
+    borderWidth: 1,
+    borderColor: "rgba(224,194,95,0.25)",
+  },
   featureIconWrap: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radius.pill,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(224,194,95,0.16)",
+    borderWidth: 1.5,
+    borderColor: "rgba(224,194,95,0.55)",
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: palette.gold300,
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 4,
   },
 });
