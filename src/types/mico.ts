@@ -34,8 +34,8 @@ export type Craftsman = {
   distanceKm: number | null;
 };
 
-/** Bir teklif vermenin maliyeti (token) — backend service-offers/service.ts OFFER_TOKEN_COST ile eslesmeli. */
-export const OFFER_TOKEN_COST = 5;
+/** Bir teklif vermenin maliyeti ("Teklif Hakkı") — backend service-offers/service.ts OFFER_TOKEN_COST ile eslesmeli. */
+export const OFFER_TOKEN_COST = 1;
 
 export type ServiceRequestStatus = "OPEN" | "OFFER_RECEIVED" | "ASSIGNED" | "COMPLETED" | "CANCELLED";
 

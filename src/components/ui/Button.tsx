@@ -87,7 +87,7 @@ export function Button({
         <>
           <View style={styles.leadingGroup}>
             {icon ? <Ionicons name={icon} size={18} color={textColors[variant]} style={{ marginRight: spacing.xs }} /> : null}
-            <Text variant="body" weight="semibold" style={{ color: textColors[variant] }}>
+            <Text variant="body" weight="semibold" style={{ color: textColors[variant], flexShrink: 1, textAlign: "center" }}>
               {label}
             </Text>
           </View>
@@ -107,5 +107,5 @@ const styles = StyleSheet.create({
   },
   md: { paddingVertical: 13, paddingHorizontal: spacing.lg },
   lg: { paddingVertical: 16, paddingHorizontal: spacing.xl },
-  leadingGroup: { flexDirection: "row", alignItems: "center" },
+  leadingGroup: { flexDirection: "row", alignItems: "center", flexShrink: 1 },
 });

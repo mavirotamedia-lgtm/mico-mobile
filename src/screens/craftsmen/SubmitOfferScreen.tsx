@@ -22,18 +22,20 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+  // API alani hala "tokenBalance" adini tasiyor ama kullaniciya "Teklif
+  // Hakki" olarak gosteriliyor — bkz. backend craftsmen/service.ts.
+  const [offerCredits, setOfferCredits] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       craftsmenApi
         .getMyCraftsmanProfile()
-        .then((c) => setTokenBalance(c.tokenBalance))
-        .catch(() => setTokenBalance(null));
+        .then((c) => setOfferCredits(c.tokenBalance))
+        .catch(() => setOfferCredits(null));
     }, [])
   );
 
-  const hasEnoughTokens = tokenBalance !== null && tokenBalance >= OFFER_TOKEN_COST;
+  const hasOfferCredits = offerCredits !== null && offerCredits >= OFFER_TOKEN_COST;
 
   async function handleSubmit() {
     setError(null);
@@ -105,16 +107,16 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
 
         <View style={[styles.tokenRow, { borderColor: theme.border }]}>
           <Text variant="bodySmall" color="secondary">
-            Bu teklif <Text variant="bodySmall" weight="bold">{OFFER_TOKEN_COST} token</Text>'a mal olacak
+            Bu teklif <Text variant="bodySmall" weight="bold">{OFFER_TOKEN_COST} Teklif Hakkı</Text> kullanacak
           </Text>
-          <Text variant="bodySmall" weight="semibold" color={hasEnoughTokens ? "secondary" : "danger"}>
-            Bakiyen: {tokenBalance ?? "..."}
+          <Text variant="bodySmall" weight="semibold" color={hasOfferCredits ? "secondary" : "danger"}>
+            Kalan Teklif Hakkınız: {offerCredits ?? "..."}
           </Text>
         </View>
 
-        {tokenBalance !== null && !hasEnoughTokens ? (
+        {offerCredits !== null && !hasOfferCredits ? (
           <Text variant="bodySmall" color="danger" style={{ marginTop: spacing.xs, marginBottom: spacing.sm }}>
-            Yetersiz bakiye — teklif vermek için en az {OFFER_TOKEN_COST} token gerekiyor.
+            Teklif hakkınız tükendi — yeni teklif verebilmek için admin ile iletişime geçin.
           </Text>
         ) : null}
 
@@ -126,14 +128,14 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
 
         <Button
           label={
-            tokenBalance !== null && !hasEnoughTokens
-              ? "Yetersiz Bakiye"
-              : `Teklif Gönder (-${OFFER_TOKEN_COST} Token) | Kalan: ${tokenBalance !== null ? tokenBalance - OFFER_TOKEN_COST : "..."}`
+            offerCredits !== null && !hasOfferCredits
+              ? "Teklif Hakkınız Tükendi"
+              : `Teklif Gönder (${OFFER_TOKEN_COST} Hak Kullanılacak) | Kalan Teklif Hakkınız: ${offerCredits !== null ? offerCredits - OFFER_TOKEN_COST : "..."}`
           }
-          variant={tokenBalance !== null && !hasEnoughTokens ? "danger" : "primary"}
+          variant={offerCredits !== null && !hasOfferCredits ? "danger" : "primary"}
           onPress={handleSubmit}
           loading={isSubmitting}
-          disabled={!isPriceValid || tokenBalance === null || !hasEnoughTokens}
+          disabled={!isPriceValid || offerCredits === null || !hasOfferCredits}
           style={{ marginTop: spacing.xs }}
         />
       </ScrollView>
