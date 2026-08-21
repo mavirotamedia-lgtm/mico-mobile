@@ -3,17 +3,20 @@
     "name": "Miço",
     "slug": "mico-mobile",
     "version": "0.1.0",
+    "scheme": "mico",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mavirotamarine.mico"
+      "bundleIdentifier": "com.mavirotamarine.mico",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.mavirotamarine.mico"
     },
     "plugins": [
       "expo-asset",
+      "expo-apple-authentication",
       [
         "expo-image-picker",
         {

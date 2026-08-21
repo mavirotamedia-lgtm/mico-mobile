@@ -10,6 +10,8 @@ type AuthContextValue = {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (input: { email: string; password: string; name: string; phone?: string }) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
+  loginWithApple: (identityToken: string, fullName?: { givenName?: string | null; familyName?: string | null }) => Promise<void>;
   logout: () => Promise<void>;
   continueAsGuest: () => void;
   exitGuest: () => void;
@@ -56,6 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       register: async (input) => {
         setUser(await authApi.register(input));
+        setIsGuest(false);
+      },
+      loginWithGoogle: async (idToken) => {
+        setUser(await authApi.loginWithGoogle(idToken));
+        setIsGuest(false);
+      },
+      loginWithApple: async (identityToken, fullName) => {
+        setUser(await authApi.loginWithApple(identityToken, fullName));
         setIsGuest(false);
       },
       logout: async () => {

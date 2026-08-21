@@ -7,6 +7,7 @@ import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
 import { palette, radius, spacing } from "@/theme/tokens";
 import { Text, Button, Input } from "@/components/ui";
+import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 import { haptics } from "@/lib/haptics";
 import type { AuthStackParamList } from "@/navigation/RootNavigator";
 import { ApiError } from "@/api/client";
@@ -144,6 +145,8 @@ export function LoginScreen({ navigation }: Props) {
               disabled={!email || !password}
               style={{ marginTop: spacing.xs }}
             />
+
+            <SocialAuthButtons />
 
             <View style={styles.footerRow}>
               <Text variant="bodySmall" color="secondary">

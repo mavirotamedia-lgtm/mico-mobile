@@ -29,6 +29,27 @@ export async function me(): Promise<PublicUser> {
   return apiRequest<PublicUser>("/auth/me");
 }
 
+export async function loginWithGoogle(idToken: string): Promise<PublicUser> {
+  const result = await apiRequest<AuthResult>("/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ idToken }),
+  });
+  await saveTokens(result.accessToken, result.refreshToken);
+  return result.user;
+}
+
+export async function loginWithApple(
+  identityToken: string,
+  fullName?: { givenName?: string | null; familyName?: string | null }
+): Promise<PublicUser> {
+  const result = await apiRequest<AuthResult>("/auth/apple", {
+    method: "POST",
+    body: JSON.stringify({ identityToken, fullName }),
+  });
+  await saveTokens(result.accessToken, result.refreshToken);
+  return result.user;
+}
+
 export async function updateMyProfile(input: { avatarUrl?: string | null; name?: string; phone?: string | null }): Promise<PublicUser> {
   return apiRequest<PublicUser>("/auth/me", { method: "PATCH", body: JSON.stringify(input) });
 }

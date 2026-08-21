@@ -8,6 +8,7 @@ const STORAGE_KEY = "mico.themePreference";
 
 type ThemeContextValue = {
   theme: Theme;
+  mode: "light" | "dark";
   preference: ThemePreference;
   setPreference: (pref: ThemePreference) => void;
   toggle: () => void;
@@ -38,6 +39,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const value = useMemo<ThemeContextValue>(
     () => ({
       theme,
+      mode: resolvedMode,
       preference,
       setPreference,
       toggle: () => setPreference(resolvedMode === "dark" ? "light" : "dark"),
