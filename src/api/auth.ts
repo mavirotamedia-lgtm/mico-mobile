@@ -29,6 +29,10 @@ export async function me(): Promise<PublicUser> {
   return apiRequest<PublicUser>("/auth/me");
 }
 
+export async function updateMyProfile(input: { avatarUrl?: string | null; name?: string; phone?: string | null }): Promise<PublicUser> {
+  return apiRequest<PublicUser>("/auth/me", { method: "PATCH", body: JSON.stringify(input) });
+}
+
 export async function logout(): Promise<void> {
   const refreshToken = await getRefreshToken();
   await apiRequest("/auth/logout", {

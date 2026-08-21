@@ -19,7 +19,7 @@ export function Avatar({ uri, name, size = 44 }: Props) {
         { width: size, height: size, borderRadius: size / 2, backgroundColor: theme.surfaceAlt },
       ]}
     >
-      <Text variant="body" weight="bold" style={{ fontSize: size * 0.4 }}>
+      <Text variant="body" weight="bold" style={{ fontSize: size * 0.4, lineHeight: size * 0.48 }}>
         {initial}
       </Text>
     </View>

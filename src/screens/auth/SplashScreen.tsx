@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Animated, View, StyleSheet, Image } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -9,8 +9,9 @@ import { Text, Button, Touchable } from "@/components/ui";
 import { useAuth } from "@/store/AuthContext";
 import type { AuthStackParamList } from "@/navigation/RootNavigator";
 
-const BOAT_IMAGE =
-  "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1400&q=75";
+// Kesintisiz (crossfade) loop'lu, lacivert tonlara çekilmiş tekne videosu —
+// üstte/altta arayüz metinleri için zaten yumuşak koyu gradyanlar gömülü.
+const SPLASH_VIDEO = require("../../../assets/video/splash-boat-loop.mp4");
 
 const FEATURES: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
   { icon: "shield-checkmark-outline", label: "Değerlendirilmiş\nUstalar" },
@@ -27,10 +28,12 @@ export function SplashScreen({ navigation }: Props) {
   const brandOpacity = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const contentTranslateY = useRef(new Animated.Value(16)).current;
-  // Ken Burns hissi: arka plan görseli ekran boyunca yavaşça büyüyüp kayarak
-  // statik bir fotoğrafa hareket katıyor (gerçek video yerine hafif bir hile).
-  const imageScale = useRef(new Animated.Value(1)).current;
-  const imageTranslateX = useRef(new Animated.Value(0)).current;
+
+  const player = useVideoPlayer(SPLASH_VIDEO, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
 
   useEffect(() => {
     Animated.sequence([
@@ -40,30 +43,20 @@ export function SplashScreen({ navigation }: Props) {
         Animated.spring(contentTranslateY, { toValue: 0, useNativeDriver: true, speed: 14, bounciness: 4 }),
       ]),
     ]).start();
-
-    Animated.parallel([
-      Animated.timing(imageScale, { toValue: 1.14, duration: 18000, useNativeDriver: true }),
-      Animated.timing(imageTranslateX, { toValue: -18, duration: 18000, useNativeDriver: true }),
-    ]).start();
-  }, [brandOpacity, contentOpacity, contentTranslateY, imageScale, imageTranslateX]);
+  }, [brandOpacity, contentOpacity, contentTranslateY]);
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.navy950 }}>
-      <Animated.Image
-        source={{ uri: BOAT_IMAGE }}
-        style={[
-          StyleSheet.absoluteFillObject,
-          { transform: [{ scale: imageScale }, { translateX: imageTranslateX }] },
-        ]}
-        resizeMode="cover"
-      />
       {/* Splash, marka anı olarak her zaman koyu hero kullanır — açık/koyu tema
           burada değil, altındaki Login/Register kartında devreye girer.
-          Gunbatimi hissi icin sicak amber bir orta katman eklendi. */}
-      <LinearGradient
-        colors={["rgba(20,10,4,0.55)", "rgba(201,162,39,0.14)", "rgba(6,15,32,0.75)", palette.navy950]}
-        locations={[0, 0.3, 0.72, 1]}
+          Video zaten lacivert tonlara çekilmiş ve üst/alt gradyanları gömülü —
+          arayüz metinleri/butonları üstüne binmeden okunur kalıyor. */}
+      <VideoView
+        player={player}
         style={StyleSheet.absoluteFillObject}
+        contentFit="cover"
+        nativeControls={false}
+        pointerEvents="none"
       />
 
       <View style={[styles.content, { paddingTop: insets.top + spacing.xxl, paddingBottom: insets.bottom + spacing.xl }]}>

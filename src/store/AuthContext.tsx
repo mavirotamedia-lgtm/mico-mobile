@@ -13,6 +13,7 @@ type AuthContextValue = {
   logout: () => Promise<void>;
   continueAsGuest: () => void;
   exitGuest: () => void;
+  updateUser: (user: PublicUser) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -64,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       continueAsGuest: () => setIsGuest(true),
       exitGuest: () => setIsGuest(false),
+      updateUser: (updated) => setUser(updated),
     }),
     [user, isGuest, isLoading]
   );

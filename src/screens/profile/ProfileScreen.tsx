@@ -1,18 +1,22 @@
 import { useCallback, useState } from "react";
-import { ScrollView, View, StyleSheet, Alert } from "react-native";
+import { ScrollView, View, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import * as craftsmenApi from "@/api/craftsmen";
+import * as authApi from "@/api/auth";
+import { uploadImage } from "@/api/uploads";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
-import { spacing } from "@/theme/tokens";
-import { Text, Card, Avatar, ScreenContainer, Touchable, Reveal } from "@/components/ui";
+import { radius, spacing } from "@/theme/tokens";
+import { Text, Card, Avatar, ScreenContainer, Touchable, Reveal, useToast } from "@/components/ui";
 import type { MainTabParamList } from "@/navigation/MainTabs";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
+import { ApiError } from "@/api/client";
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, "Profile">,
@@ -20,10 +24,40 @@ type Props = CompositeScreenProps<
 >;
 
 export function ProfileScreen({ navigation }: Props) {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { theme, preference, setPreference } = useTheme();
+  const { show } = useToast();
   const insets = useSafeAreaInsets();
   const [isCraftsman, setIsCraftsman] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  async function handlePickAvatar() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      show("Fotoğraf seçmek için galeri izni gerekiyor.", "error");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (result.canceled || !result.assets[0]) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      const url = await uploadImage(result.assets[0].uri, result.assets[0].mimeType);
+      const updated = await authApi.updateMyProfile({ avatarUrl: url });
+      updateUser(updated);
+      show("Profil fotoğrafı güncellendi.", "success");
+    } catch (e) {
+      show(e instanceof ApiError ? e.message : "Fotoğraf yüklenemedi.", "error");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
 
   // useFocusEffect (mount-only useEffect degil): Usta Ol formunu doldurup
   // geri donuldugunde bu ekran menusunun (Usta Panelim/Usta Profilim) hemen
@@ -72,7 +106,16 @@ export function ProfileScreen({ navigation }: Props) {
 
         <Reveal>
           <Card style={{ flexDirection: "row", alignItems: "center" }}>
-            <Avatar name={user?.name ?? "Kaptan"} size={56} />
+            <Touchable onPress={handlePickAvatar} disabled={isUploadingAvatar} style={styles.avatarTouchable}>
+              <Avatar name={user?.name ?? "Kaptan"} uri={user?.avatarUrl} size={56} />
+              <View style={[styles.editBadge, { backgroundColor: theme.primary, borderColor: theme.background }]}>
+                {isUploadingAvatar ? (
+                  <ActivityIndicator size="small" color={theme.onPrimary} />
+                ) : (
+                  <Ionicons name="camera" size={12} color={theme.onPrimary} />
+                )}
+              </View>
+            </Touchable>
             <View style={{ marginLeft: spacing.sm, flex: 1 }}>
               <Text variant="h2" weight="extrabold" numberOfLines={1}>
                 {user?.name}
@@ -150,4 +193,16 @@ const styles = StyleSheet.create({
   menuRow: { flexDirection: "row", alignItems: "center", padding: spacing.md },
   themeOption: { flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 10 },
   logoutRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: spacing.xl, padding: spacing.sm },
+  avatarTouchable: { position: "relative" },
+  editBadge: {
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    width: 22,
+    height: 22,
+    borderRadius: radius.pill,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
