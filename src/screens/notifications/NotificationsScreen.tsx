@@ -17,8 +17,13 @@ const NOTIFICATION_ICON: Record<NotificationType, keyof typeof Ionicons.glyphMap
   MAINTENANCE_DUE: "construct-outline",
   SERVICE_OFFER_RECEIVED: "pricetag-outline",
   SERVICE_OFFER_ACCEPTED: "checkmark-circle-outline",
+  SERVICE_OFFER_DECLINED: "close-circle-outline",
+  SERVICE_REQUEST_CANCELLED: "close-circle-outline",
+  SERVICE_REQUEST_COMPLETED: "checkmark-done-circle-outline",
   NEW_MESSAGE: "chatbubble-outline",
   REVIEW_RECEIVED: "star-outline",
+  CRAFTSMAN_APPROVED: "shield-checkmark-outline",
+  CRAFTSMAN_REJECTED: "close-circle-outline",
   TOKEN_LOW: "wallet-outline",
   ADMIN_ANNOUNCEMENT: "megaphone-outline",
 };
