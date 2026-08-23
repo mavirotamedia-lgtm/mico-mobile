@@ -19,6 +19,7 @@ import { BecomeCraftsmanScreen } from "@/screens/craftsmen/BecomeCraftsmanScreen
 import { SubmitOfferScreen } from "@/screens/craftsmen/SubmitOfferScreen";
 import { OffersScreen } from "@/screens/offers/OffersScreen";
 import { LeaveReviewScreen } from "@/screens/reviews/LeaveReviewScreen";
+import { FavoritesScreen } from "@/screens/favorites/FavoritesScreen";
 import { ChatScreen } from "@/screens/chat/ChatScreen";
 import { ConversationsScreen } from "@/screens/messages/ConversationsScreen";
 import { NotificationsScreen } from "@/screens/notifications/NotificationsScreen";
@@ -43,6 +44,7 @@ export type AppStackParamList = {
   SubmitOffer: { serviceRequest: ServiceRequest };
   Offers: { serviceRequest: ServiceRequest };
   LeaveReview: { serviceRequestId: string; craftsmanId: string; craftsmanName: string };
+  Favorites: undefined;
   Chat: { conversationId: string; otherUserName: string };
   Conversations: undefined;
   Notifications: undefined;
@@ -88,6 +90,7 @@ export function RootNavigator() {
           <AppStack.Screen name="SubmitOffer" component={SubmitOfferScreen} />
           <AppStack.Screen name="Offers" component={OffersScreen} />
           <AppStack.Screen name="LeaveReview" component={LeaveReviewScreen} />
+          <AppStack.Screen name="Favorites" component={FavoritesScreen} />
           <AppStack.Screen name="Chat" component={ChatScreen} />
           <AppStack.Screen name="Conversations" component={ConversationsScreen} />
           <AppStack.Screen name="Notifications" component={NotificationsScreen} />

@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as craftsmenApi from "@/api/craftsmen";
 import * as conversationsApi from "@/api/conversations";
 import * as reviewsApi from "@/api/reviews";
+import * as favoritesApi from "@/api/favorites";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
 import { Text, Card, Avatar, Rating, Badge, Button, Header, ScreenContainer, Reveal, useToast } from "@/components/ui";
@@ -29,6 +30,8 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isMessaging, setIsMessaging] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
 
   useEffect(() => {
     craftsmenApi
@@ -39,7 +42,36 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
       .listReviews("CRAFTSMAN", craftsmanId)
       .then((res) => setReviews(res.items))
       .catch(() => {});
-  }, [craftsmanId]);
+    if (!isGuest) {
+      favoritesApi
+        .listFavorites("CRAFTSMAN")
+        .then((res) => setIsFavorited(res.items.some((f) => f.targetId === craftsmanId)))
+        .catch(() => {});
+    }
+  }, [craftsmanId, isGuest]);
+
+  async function handleToggleFavorite() {
+    if (isGuest) {
+      show("Favorilere eklemek için giriş yapmalısın.", "error");
+      exitGuest();
+      return;
+    }
+    if (isTogglingFavorite) return;
+    setIsTogglingFavorite(true);
+    const nextValue = !isFavorited;
+    try {
+      if (nextValue) {
+        await favoritesApi.addFavorite("CRAFTSMAN", craftsmanId);
+      } else {
+        await favoritesApi.removeFavorite("CRAFTSMAN", craftsmanId);
+      }
+      setIsFavorited(nextValue);
+    } catch (e) {
+      show(e instanceof ApiError ? e.message : "İşlem gerçekleştirilemedi.", "error");
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  }
 
   async function handleMessage() {
     if (!craftsman) return;
@@ -61,7 +93,12 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <Header title="Usta Profili" onBack={() => navigation.goBack()} />
+      <Header
+        title="Usta Profili"
+        onBack={() => navigation.goBack()}
+        rightIcon={isFavorited ? "heart" : "heart-outline"}
+        onRightPress={handleToggleFavorite}
+      />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1 }}>
         {craftsman ? (
           <Reveal>

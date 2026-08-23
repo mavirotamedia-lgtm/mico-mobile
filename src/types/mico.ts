@@ -145,4 +145,14 @@ export type CreateReviewInput = {
   serviceRequestId?: string;
 };
 
+export type FavoriteTargetType = "CRAFTSMAN" | "MARKET_LISTING" | "USED_BOAT_LISTING" | "COMPANY";
+
+export type Favorite = {
+  id: string;
+  userId: string;
+  targetType: FavoriteTargetType;
+  targetId: string;
+  createdAt: string;
+};
+
 export type Paginated<T> = { items: T[]; page: number; pageSize: number; hasMore: boolean };

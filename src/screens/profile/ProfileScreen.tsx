@@ -75,6 +75,7 @@ export function ProfileScreen({ navigation }: Props) {
     { icon: "boat-outline", label: "Teknelerim", onPress: () => navigation.navigate("MyBoat") },
     { icon: "pricetag-outline", label: "Servis Taleplerim", onPress: () => navigation.navigate("ServiceRequests") },
     { icon: "construct-outline", label: "Usta Bul", onPress: () => navigation.navigate("CraftsmanList") },
+    { icon: "heart-outline", label: "Favori Ustalarım", onPress: () => navigation.navigate("Favorites") },
     { icon: "chatbubbles-outline", label: "Mesajlarım", onPress: () => navigation.navigate("Conversations") },
     ...(isCraftsman
       ? [

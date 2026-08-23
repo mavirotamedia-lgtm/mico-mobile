@@ -54,6 +54,7 @@ export function OffersScreen({ route, navigation }: Props) {
   const [busy, setBusy] = useState<BusyAction>(null);
   const [requestStatus, setRequestStatus] = useState<ServiceRequestStatus>(serviceRequest.status);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
 
   const load = useCallback(
@@ -175,6 +176,28 @@ export function OffersScreen({ route, navigation }: Props) {
     ]);
   }
 
+  function handleCancel() {
+    Alert.alert("Talebi İptal Et", "Bu servis talebini iptal etmek istediğine emin misin? Bu işlem geri alınamaz.", [
+      { text: "Vazgeç", style: "cancel" },
+      {
+        text: "Talebi İptal Et",
+        style: "destructive",
+        onPress: async () => {
+          setIsCancelling(true);
+          try {
+            await serviceRequestsApi.cancelServiceRequest(serviceRequest.id);
+            show("Talep iptal edildi", "success");
+            load();
+          } catch (e) {
+            show(e instanceof ApiError ? e.message : "Talep iptal edilemedi.", "error");
+          } finally {
+            setIsCancelling(false);
+          }
+        },
+      },
+    ]);
+  }
+
   async function handleMessage(offer: OfferWithCraftsman) {
     if (!offer.craftsmanInfo) return;
     setBusy({ id: offer.id, kind: "message" });
@@ -287,6 +310,21 @@ export function OffersScreen({ route, navigation }: Props) {
                 )}
               </Card>
             ) : null}
+
+            {requestStatus === "OPEN" || requestStatus === "OFFER_RECEIVED" || requestStatus === "ASSIGNED" ? (
+              <Pressable onPress={handleCancel} disabled={isCancelling} style={styles.cancelRow}>
+                {isCancelling ? (
+                  <ActivityIndicator color={theme.danger} size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="close-circle-outline" size={16} color={theme.danger} />
+                    <Text variant="bodySmall" weight="semibold" color="danger" style={{ marginLeft: 6 }}>
+                      Talebi İptal Et
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            ) : null}
           </View>
         }
         ListEmptyComponent={
@@ -339,7 +377,7 @@ export function OffersScreen({ route, navigation }: Props) {
                   loading={busy?.id === item.id && busy.kind === "message"}
                   disabled={busy !== null && busy.id !== item.id}
                 />
-                {item.status === "PENDING" ? (
+                {item.status === "PENDING" && (requestStatus === "OPEN" || requestStatus === "OFFER_RECEIVED") ? (
                   <Button
                     label="Kabul Et"
                     fullWidth={false}
@@ -360,6 +398,7 @@ export function OffersScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   empty: { alignItems: "center", paddingTop: spacing.xxxl },
+  cancelRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: spacing.md, padding: spacing.sm },
   statsRow: { flexDirection: "row", marginTop: spacing.sm },
   actionsRow: { flexDirection: "row", marginTop: spacing.sm },
   photoRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
