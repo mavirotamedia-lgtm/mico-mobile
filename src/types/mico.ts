@@ -100,6 +100,7 @@ export type Message = {
   body: string;
   imageUrl: string | null;
   readAt: string | null;
+  deletedAt: string | null;
   createdAt: string;
 };
 

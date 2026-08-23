@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   FlatList,
   View,
@@ -85,7 +86,7 @@ export function ChatScreen({ route, navigation }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [pendingImage, setPendingImage] = useState<{ uri: string; mimeType?: string } | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [isOtherTyping, setIsOtherTyping] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -170,21 +171,29 @@ export function ChatScreen({ route, navigation }: Props) {
 
   async function handleSend() {
     const body = draft.trim();
-    if (!body) return;
+    if (!body && !pendingImage) return;
     setIsSending(true);
     try {
-      await conversationsApi.sendMessage(conversationId, { body });
+      let imageUrl: string | undefined;
+      if (pendingImage) {
+        imageUrl = await uploadImage(pendingImage.uri, pendingImage.mimeType);
+      }
+      await conversationsApi.sendMessage(conversationId, { body: body || undefined, imageUrl });
       setDraft("");
+      setPendingImage(null);
       load();
     } catch (e) {
-      // Yazilan metni SILME — gonderim basarisiz oldu, kullanici tekrar
-      // deneyebilsin diye taslak korunuyor.
+      // Yazilan metni ve secili gorseli SILME — gonderim basarisiz oldu,
+      // kullanici tekrar deneyebilsin diye taslak korunuyor.
       show(e instanceof ApiError ? e.message : "Mesaj gönderilemedi.", "error");
     } finally {
       setIsSending(false);
     }
   }
 
+  // Gorsel secildiginde HEMEN gonderilmiyor — kullanici yanlis gorseli
+  // secip gondermeden onceki bir onizleme/vazgecme imkani olmasi icin
+  // gonder butonuna basana kadar sadece yerel onizlemede tutuluyor.
   async function handlePickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -195,16 +204,30 @@ export function ChatScreen({ route, navigation }: Props) {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
     if (result.canceled || !result.assets[0]) return;
 
-    setIsUploadingImage(true);
-    try {
-      const url = await uploadImage(result.assets[0].uri, result.assets[0].mimeType);
-      await conversationsApi.sendMessage(conversationId, { imageUrl: url });
-      load();
-    } catch (e) {
-      show(e instanceof ApiError ? e.message : "Görsel gönderilemedi.", "error");
-    } finally {
-      setIsUploadingImage(false);
-    }
+    setPendingImage({ uri: result.assets[0].uri, mimeType: result.assets[0].mimeType });
+  }
+
+  function handleLongPressMessage(message: Message) {
+    if (message.senderId !== user?.id || message.deletedAt) return;
+    Alert.alert("Mesajı Sil", "Bu mesaj karşı taraftan da silinecek. Emin misin?", [
+      { text: "Vazgeç", style: "cancel" },
+      {
+        text: "Sil",
+        style: "destructive",
+        onPress: async () => {
+          const previous = messages;
+          setMessages((prev) =>
+            prev.map((m) => (m.id === message.id ? { ...m, body: "", imageUrl: null, deletedAt: new Date().toISOString() } : m))
+          );
+          try {
+            await conversationsApi.deleteMessage(conversationId, message.id);
+          } catch (e) {
+            show(e instanceof ApiError ? e.message : "Mesaj silinemedi.", "error");
+            setMessages(previous);
+          }
+        },
+      },
+    ]);
   }
 
   return (
@@ -252,7 +275,9 @@ export function ChatScreen({ route, navigation }: Props) {
             return (
               <View style={[styles.bubbleRow, isMine ? styles.bubbleRowMine : styles.bubbleRowTheirs]}>
                 {!isMine ? <Avatar name={otherUserName} size={28} /> : null}
-                <View
+                <Touchable
+                  onPress={() => item.imageUrl && setFullscreenImage(item.imageUrl)}
+                  onLongPress={() => handleLongPressMessage(item)}
                   style={[
                     styles.bubble,
                     isMine ? styles.bubbleTailMine : styles.bubbleTailTheirs,
@@ -264,19 +289,31 @@ export function ChatScreen({ route, navigation }: Props) {
                     },
                   ]}
                 >
-                  {item.imageUrl ? (
-                    <Touchable onPress={() => setFullscreenImage(item.imageUrl)}>
-                      <Image source={{ uri: item.imageUrl }} style={styles.chatImage} resizeMode="cover" />
-                    </Touchable>
-                  ) : null}
-                  {item.body ? (
-                    <Text
-                      variant="body"
-                      style={{ color: isMine ? theme.onPrimary : theme.textPrimary, marginTop: item.imageUrl ? spacing.xs : 0 }}
-                    >
-                      {item.body}
-                    </Text>
-                  ) : null}
+                  {item.deletedAt ? (
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <Ionicons name="ban-outline" size={14} color={isMine ? theme.textOnDarkMuted : theme.textSecondary} />
+                      <Text
+                        variant="body"
+                        style={{ color: isMine ? theme.textOnDarkMuted : theme.textSecondary, fontStyle: "italic", marginLeft: 4 }}
+                      >
+                        Bu mesaj silindi
+                      </Text>
+                    </View>
+                  ) : (
+                    <>
+                      {item.imageUrl ? (
+                        <Image source={{ uri: item.imageUrl }} style={styles.chatImage} resizeMode="cover" />
+                      ) : null}
+                      {item.body ? (
+                        <Text
+                          variant="body"
+                          style={{ color: isMine ? theme.onPrimary : theme.textPrimary, marginTop: item.imageUrl ? spacing.xs : 0 }}
+                        >
+                          {item.body}
+                        </Text>
+                      ) : null}
+                    </>
+                  )}
                   <View style={styles.metaRow}>
                     <Text
                       variant="caption"
@@ -293,25 +330,40 @@ export function ChatScreen({ route, navigation }: Props) {
                       />
                     ) : null}
                   </View>
-                </View>
+                </Touchable>
               </View>
             );
             }}
           />
         )}
 
+        {pendingImage ? (
+          <View style={[styles.pendingImageBar, { borderTopColor: theme.border, backgroundColor: theme.surface }]}>
+            <View>
+              <Image source={{ uri: pendingImage.uri }} style={styles.pendingImageThumb} resizeMode="cover" />
+              <Touchable
+                onPress={() => setPendingImage(null)}
+                disabled={isSending}
+                haptic
+                style={[styles.pendingImageRemove, { backgroundColor: theme.textPrimary }]}
+              >
+                <Ionicons name="close" size={12} color={theme.background} />
+              </Touchable>
+            </View>
+            <Text variant="bodySmall" color="secondary" style={{ marginLeft: spacing.sm, flex: 1 }}>
+              Görsel gönderilmeye hazır — Gönder'e bas.
+            </Text>
+          </View>
+        ) : null}
+
         <View style={[styles.inputBar, { borderTopColor: theme.border, backgroundColor: theme.surface }]}>
           <Touchable
             onPress={handlePickImage}
-            disabled={isUploadingImage}
+            disabled={isSending}
             haptic
-            style={[styles.attachButton, { opacity: isUploadingImage ? 0.5 : 1 }]}
+            style={[styles.attachButton, { opacity: isSending ? 0.5 : 1 }]}
           >
-            {isUploadingImage ? (
-              <ActivityIndicator size="small" color={theme.primary} />
-            ) : (
-              <Ionicons name="image-outline" size={22} color={theme.primary} />
-            )}
+            <Ionicons name="image-outline" size={22} color={theme.primary} />
           </Touchable>
           <View style={[styles.textInputWrapper, { backgroundColor: theme.background, borderColor: theme.border }]}>
             <TextInput
@@ -326,11 +378,18 @@ export function ChatScreen({ route, navigation }: Props) {
           </View>
           <Touchable
             onPress={handleSend}
-            disabled={!draft.trim() || isSending}
+            disabled={(!draft.trim() && !pendingImage) || isSending}
             haptic
-            style={[styles.sendButton, { backgroundColor: theme.primary, opacity: !draft.trim() || isSending ? 0.5 : 1 }]}
+            style={[
+              styles.sendButton,
+              { backgroundColor: theme.primary, opacity: (!draft.trim() && !pendingImage) || isSending ? 0.5 : 1 },
+            ]}
           >
-            <Ionicons name="send" size={18} color={theme.onPrimary} />
+            {isSending ? (
+              <ActivityIndicator size="small" color={theme.onPrimary} />
+            ) : (
+              <Ionicons name="send" size={18} color={theme.onPrimary} />
+            )}
           </Touchable>
         </View>
       </KeyboardAvoidingView>
@@ -386,6 +445,24 @@ const styles = StyleSheet.create({
   },
   sendButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   attachButton: { width: 40, height: 40, alignItems: "center", justifyContent: "center", marginRight: 2 },
+  pendingImageBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  pendingImageThumb: { width: 52, height: 52, borderRadius: radius.md },
+  pendingImageRemove: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   chatImage: { width: 200, height: 200, borderRadius: radius.md },
   lightboxBackdrop: {
     flex: 1,

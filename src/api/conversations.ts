@@ -20,6 +20,10 @@ export async function sendMessage(conversationId: string, input: { body?: string
   });
 }
 
+export async function deleteMessage(conversationId: string, messageId: string) {
+  return apiRequest<Message>(`/conversations/${conversationId}/messages/${messageId}`, { method: "DELETE" });
+}
+
 export async function markConversationAsRead(conversationId: string) {
   return apiRequest<{ updatedCount: number }>(`/conversations/${conversationId}/read`, { method: "POST" });
 }
