@@ -4,16 +4,21 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import * as craftsmenApi from "@/api/craftsmen";
 import * as conversationsApi from "@/api/conversations";
+import * as reviewsApi from "@/api/reviews";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
 import { Text, Card, Avatar, Rating, Badge, Button, Header, ScreenContainer, Reveal, useToast } from "@/components/ui";
 import { useAuth } from "@/store/AuthContext";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
-import type { Craftsman } from "@/types/mico";
+import type { Craftsman, Review } from "@/types/mico";
 import { SPECIALTY_LABELS } from "@/types/mico";
 import { ApiError } from "@/api/client";
 
 type Props = NativeStackScreenProps<AppStackParamList, "CraftsmanDetail">;
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("tr-TR");
+}
 
 export function CraftsmanDetailScreen({ route, navigation }: Props) {
   const { craftsmanId } = route.params;
@@ -21,6 +26,7 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
   const { show } = useToast();
   const { isGuest, exitGuest } = useAuth();
   const [craftsman, setCraftsman] = useState<Craftsman | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isMessaging, setIsMessaging] = useState(false);
 
@@ -29,6 +35,10 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
       .getCraftsman(craftsmanId)
       .then(setCraftsman)
       .catch((e) => setLoadError(e instanceof ApiError ? e.message : "Usta profili yüklenemedi."));
+    reviewsApi
+      .listReviews("CRAFTSMAN", craftsmanId)
+      .then((res) => setReviews(res.items))
+      .catch(() => {});
   }, [craftsmanId]);
 
   async function handleMessage() {
@@ -90,6 +100,36 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
               loading={isMessaging}
               style={{ marginTop: spacing.lg }}
             />
+
+            <Text variant="bodySmall" weight="semibold" color="secondary" style={{ marginTop: spacing.xl, marginBottom: spacing.xs }}>
+              DEĞERLENDİRMELER {reviews.length > 0 ? `(${reviews.length})` : ""}
+            </Text>
+            {reviews.length === 0 ? (
+              <Card>
+                <Text variant="bodySmall" color="secondary" style={{ textAlign: "center" }}>
+                  Bu usta için henüz değerlendirme yapılmamış.
+                </Text>
+              </Card>
+            ) : (
+              reviews.map((review) => (
+                <Card key={review.id} style={{ marginBottom: spacing.sm }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text variant="bodySmall" weight="bold">
+                      {review.author?.name ?? "Kaptan"}
+                    </Text>
+                    <Rating value={review.rating} />
+                  </View>
+                  {review.comment ? (
+                    <Text variant="bodySmall" color="secondary" style={{ marginTop: 4 }}>
+                      {review.comment}
+                    </Text>
+                  ) : null}
+                  <Text variant="caption" color="secondary" style={{ marginTop: 4 }}>
+                    {formatDate(review.createdAt)}
+                  </Text>
+                </Card>
+              ))
+            )}
           </Reveal>
         ) : loadError ? (
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>

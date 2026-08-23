@@ -8,13 +8,14 @@ import * as offersApi from "@/api/offers";
 import * as craftsmenApi from "@/api/craftsmen";
 import * as conversationsApi from "@/api/conversations";
 import * as serviceRequestsApi from "@/api/serviceRequests";
+import * as reviewsApi from "@/api/reviews";
 import { uploadImage } from "@/api/uploads";
 import { resolveMediaUrl } from "@/lib/media";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
 import { Text, Card, Avatar, Rating, Badge, Button, Header, ScreenContainer, Reveal, Skeleton, useToast } from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
-import type { Craftsman, ServiceOffer } from "@/types/mico";
+import type { Craftsman, ServiceOffer, ServiceRequestStatus } from "@/types/mico";
 import { ApiError } from "@/api/client";
 
 type Props = NativeStackScreenProps<AppStackParamList, "Offers">;
@@ -51,12 +52,20 @@ export function OffersScreen({ route, navigation }: Props) {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [busy, setBusy] = useState<BusyAction>(null);
+  const [requestStatus, setRequestStatus] = useState<ServiceRequestStatus>(serviceRequest.status);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
 
   const load = useCallback(
     async (isRefresh = false) => {
       if (isRefresh) setIsRefreshing(true);
       try {
-        const res = await offersApi.listOffersForRequest(serviceRequest.id);
+        const [freshRequest, res] = await Promise.all([
+          serviceRequestsApi.getServiceRequest(serviceRequest.id),
+          offersApi.listOffersForRequest(serviceRequest.id),
+        ]);
+        setRequestStatus(freshRequest.status);
+
         const withCraftsmen = await Promise.all(
           res.map(async (offer) => {
             try {
@@ -68,6 +77,14 @@ export function OffersScreen({ route, navigation }: Props) {
           })
         );
         setOffers(withCraftsmen);
+
+        // Değerlendirme sadece kabul edilmiş teklifin ustasına yapılabilir —
+        // bu talebe daha önce değerlendirme yapılmış mı diye bakılıyor.
+        const acceptedOffer = withCraftsmen.find((o) => o.status === "ACCEPTED");
+        if (freshRequest.status === "COMPLETED" && acceptedOffer) {
+          const reviews = await reviewsApi.listReviews("CRAFTSMAN", acceptedOffer.craftsmanId);
+          setHasReviewed(reviews.items.some((r) => r.serviceRequestId === serviceRequest.id));
+        }
       } catch (e) {
         show(e instanceof ApiError ? e.message : "Teklifler yüklenemedi.", "error");
       } finally {
@@ -137,6 +154,27 @@ export function OffersScreen({ route, navigation }: Props) {
     );
   }
 
+  function handleComplete() {
+    Alert.alert("Talebi Tamamla", "Bu iş tamamlandı olarak işaretlensin mi? Ardından ustayı değerlendirebilirsin.", [
+      { text: "Vazgeç", style: "cancel" },
+      {
+        text: "Tamamlandı",
+        onPress: async () => {
+          setIsCompleting(true);
+          try {
+            await serviceRequestsApi.completeServiceRequest(serviceRequest.id);
+            show("Talep tamamlandı olarak işaretlendi", "success");
+            load();
+          } catch (e) {
+            show(e instanceof ApiError ? e.message : "Talep tamamlanamadı.", "error");
+          } finally {
+            setIsCompleting(false);
+          }
+        },
+      },
+    ]);
+  }
+
   async function handleMessage(offer: OfferWithCraftsman) {
     if (!offer.craftsmanInfo) return;
     setBusy({ id: offer.id, kind: "message" });
@@ -192,6 +230,63 @@ export function OffersScreen({ route, navigation }: Props) {
                 )}
               </Pressable>
             </View>
+
+            {requestStatus === "ASSIGNED" ? (
+              <Card style={{ marginTop: spacing.lg }}>
+                <Text variant="body" weight="bold">
+                  İş tamamlandı mı?
+                </Text>
+                <Text variant="bodySmall" color="secondary" style={{ marginTop: 2, marginBottom: spacing.sm }}>
+                  Usta işi bitirdiyse talebi tamamlandı olarak işaretle, ardından ustayı değerlendirebilirsin.
+                </Text>
+                <Button
+                  label="Tamamlandı Olarak İşaretle"
+                  variant="secondary"
+                  icon="checkmark-done-outline"
+                  onPress={handleComplete}
+                  loading={isCompleting}
+                />
+              </Card>
+            ) : null}
+
+            {requestStatus === "COMPLETED" ? (
+              <Card style={{ marginTop: spacing.lg }}>
+                {hasReviewed ? (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Ionicons name="checkmark-circle" size={18} color={theme.success} />
+                    <Text variant="bodySmall" weight="semibold" style={{ marginLeft: spacing.xs }}>
+                      Bu iş için ustayı değerlendirdin.
+                    </Text>
+                  </View>
+                ) : (
+                  (() => {
+                    const acceptedOffer = offers.find((o) => o.status === "ACCEPTED");
+                    if (!acceptedOffer) return null;
+                    return (
+                      <>
+                        <Text variant="body" weight="bold">
+                          Bu iş tamamlandı
+                        </Text>
+                        <Text variant="bodySmall" color="secondary" style={{ marginTop: 2, marginBottom: spacing.sm }}>
+                          Diğer tekne sahiplerine yardımcı olmak için ustayı değerlendir.
+                        </Text>
+                        <Button
+                          label="Ustayı Değerlendir"
+                          icon="star-outline"
+                          onPress={() =>
+                            navigation.navigate("LeaveReview", {
+                              serviceRequestId: serviceRequest.id,
+                              craftsmanId: acceptedOffer.craftsmanId,
+                              craftsmanName: acceptedOffer.craftsmanInfo?.businessName ?? "Usta",
+                            })
+                          }
+                        />
+                      </>
+                    );
+                  })()
+                )}
+              </Card>
+            ) : null}
           </View>
         }
         ListEmptyComponent={

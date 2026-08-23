@@ -123,4 +123,26 @@ export type AppNotification = {
   createdAt: string;
 };
 
+export type ReviewTargetType = "CRAFTSMAN" | "MARKET_LISTING" | "USED_BOAT_LISTING";
+
+export type Review = {
+  id: string;
+  authorId: string;
+  targetType: ReviewTargetType;
+  targetId: string;
+  rating: number;
+  comment: string | null;
+  serviceRequestId: string | null;
+  createdAt: string;
+  author?: { id: string; name: string };
+};
+
+export type CreateReviewInput = {
+  targetType: ReviewTargetType;
+  targetId: string;
+  rating: number;
+  comment?: string;
+  serviceRequestId?: string;
+};
+
 export type Paginated<T> = { items: T[]; page: number; pageSize: number; hasMore: boolean };

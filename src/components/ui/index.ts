@@ -3,6 +3,7 @@ export { Button } from "@/components/ui/Button";
 export { Card } from "@/components/ui/Card";
 export { Badge } from "@/components/ui/Badge";
 export { Rating } from "@/components/ui/Rating";
+export { RatingInput } from "@/components/ui/RatingInput";
 export { Avatar } from "@/components/ui/Avatar";
 export { Input } from "@/components/ui/Input";
 export { Header } from "@/components/ui/Header";

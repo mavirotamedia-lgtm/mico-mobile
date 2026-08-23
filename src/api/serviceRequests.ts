@@ -25,6 +25,13 @@ export async function cancelServiceRequest(id: string) {
   });
 }
 
+export async function completeServiceRequest(id: string) {
+  return apiRequest<ServiceRequest>(`/service-requests/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "COMPLETED" }),
+  });
+}
+
 export async function updateServiceRequest(id: string, input: Partial<CreateServiceRequestInput>) {
   return apiRequest<ServiceRequest>(`/service-requests/${id}`, {
     method: "PATCH",
