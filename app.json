@@ -28,6 +28,13 @@
         {
           "locationWhenInUsePermissionDescription": "MİÇO, servis talebine konumunu eklemen için konumuna erişim istiyor."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/branding/logo-icon.png",
+          "color": "#060F20"
+        }
       ]
     ]
   }

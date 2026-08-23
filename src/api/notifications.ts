@@ -12,3 +12,16 @@ export async function markAsRead(id: string) {
 export async function markAllAsRead() {
   return apiRequest<{ success: true }>("/notifications/read-all", { method: "POST" });
 }
+
+export async function registerPushToken(token: string, platform: "IOS" | "ANDROID") {
+  return apiRequest<{ id: string }>("/notifications/push-tokens", {
+    method: "POST",
+    body: JSON.stringify({ token, platform }),
+  });
+}
+
+export async function removePushToken(token: string) {
+  return apiRequest<{ success: boolean }>(`/notifications/push-tokens/${encodeURIComponent(token)}`, {
+    method: "DELETE",
+  });
+}

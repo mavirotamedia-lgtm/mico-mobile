@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import * as authApi from "@/api/auth";
 import { getAccessToken } from "@/api/session";
 import { onAuthFailure } from "@/api/client";
+import { registerForPushNotificationsAsync } from "@/lib/pushNotifications";
 import type { PublicUser } from "@/types/api";
 
 type AuthContextValue = {
@@ -46,6 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // refresh suresi doldu, sunucuda oturum silindi vb.) api/client.ts bunu
   // bildirir; kullanici burada oturumdan dusurulup Login ekranina yonlenir.
   useEffect(() => onAuthFailure(() => setUser(null)), []);
+
+  // Kullanici oturum acmis her sekilde (ilk yukleme, login, register,
+  // Apple/Google) push token'i kaydeder — tek bir yerden, akis basina
+  // tekrarlamak yerine.
+  useEffect(() => {
+    if (user?.id) registerForPushNotificationsAsync();
+  }, [user?.id]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
