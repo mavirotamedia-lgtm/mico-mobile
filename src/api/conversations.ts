@@ -23,3 +23,11 @@ export async function sendMessage(conversationId: string, input: { body?: string
 export async function markConversationAsRead(conversationId: string) {
   return apiRequest<{ updatedCount: number }>(`/conversations/${conversationId}/read`, { method: "POST" });
 }
+
+export async function sendTypingSignal(conversationId: string) {
+  return apiRequest<{ success: boolean }>(`/conversations/${conversationId}/typing`, { method: "POST" });
+}
+
+export async function getTypingStatus(conversationId: string) {
+  return apiRequest<{ isTyping: boolean }>(`/conversations/${conversationId}/typing`);
+}

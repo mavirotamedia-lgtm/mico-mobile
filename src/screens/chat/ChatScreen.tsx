@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   View,
   StyleSheet,
@@ -27,9 +28,52 @@ import { ApiError } from "@/api/client";
 type Props = NativeStackScreenProps<AppStackParamList, "Chat">;
 
 const POLL_INTERVAL_MS = 4000;
+const TYPING_POLL_INTERVAL_MS = 2000;
+// Karsi tarafin "yaziyor" isareti sunucuda 5sn'de sona eriyor (bkz. backend
+// messaging/service.ts TYPING_TTL_MS) — biz de yazarken bu sureden once
+// tazeleyerek gostergenin surekli acik kalmasini sagliyoruz.
+const TYPING_SIGNAL_THROTTLE_MS = 2500;
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+}
+
+/** WhatsApp'taki gibi zipliyan uc noktali "yaziyor" gostergesi. */
+function TypingDots({ color }: { color: string }) {
+  const dots = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
+
+  useEffect(() => {
+    const loops = dots.map((dot, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 150),
+          Animated.timing(dot, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.delay((2 - i) * 150),
+        ])
+      )
+    );
+    loops.forEach((loop) => loop.start());
+    return () => loops.forEach((loop) => loop.stop());
+  }, [dots]);
+
+  return (
+    <View style={{ flexDirection: "row" }}>
+      {dots.map((dot, i) => (
+        <Animated.View
+          key={i}
+          style={[
+            styles.typingDot,
+            {
+              backgroundColor: color,
+              marginLeft: i === 0 ? 0 : 3,
+              transform: [{ translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }) }],
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
 }
 
 export function ChatScreen({ route, navigation }: Props) {
@@ -43,9 +87,12 @@ export function ChatScreen({ route, navigation }: Props) {
   const [isSending, setIsSending] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [isOtherTyping, setIsOtherTyping] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const typingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const listRef = useRef<FlatList<Message>>(null);
   const lastMessageCount = useRef(0);
+  const lastTypingSentAt = useRef(0);
 
   const load = useCallback(async () => {
     try {
@@ -68,6 +115,15 @@ export function ChatScreen({ route, navigation }: Props) {
     });
   }, [conversationId]);
 
+  const pollTyping = useCallback(() => {
+    conversationsApi
+      .getTypingStatus(conversationId)
+      .then((res) => setIsOtherTyping(res.isTyping))
+      .catch(() => {
+        // sessizce yut — bir sonraki poll'de tekrar denenir
+      });
+  }, [conversationId]);
+
   useFocusEffect(
     useCallback(() => {
       load();
@@ -76,10 +132,13 @@ export function ChatScreen({ route, navigation }: Props) {
         load();
         markRead();
       }, POLL_INTERVAL_MS);
+      typingPollRef.current = setInterval(pollTyping, TYPING_POLL_INTERVAL_MS);
       return () => {
         if (pollRef.current) clearInterval(pollRef.current);
+        if (typingPollRef.current) clearInterval(typingPollRef.current);
+        setIsOtherTyping(false);
       };
-    }, [load, markRead])
+    }, [load, markRead, pollTyping])
   );
 
   // Yeni mesaj geldiginde (kendi gonderdigimiz ya da karsi tarafinki, polling
@@ -91,6 +150,23 @@ export function ChatScreen({ route, navigation }: Props) {
     }
     lastMessageCount.current = messages.length;
   }, [messages]);
+
+  useEffect(() => {
+    if (isOtherTyping) {
+      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+    }
+  }, [isOtherTyping]);
+
+  function handleDraftChange(text: string) {
+    setDraft(text);
+    const now = Date.now();
+    if (text.trim() && now - lastTypingSentAt.current > TYPING_SIGNAL_THROTTLE_MS) {
+      lastTypingSentAt.current = now;
+      conversationsApi.sendTypingSignal(conversationId).catch(() => {
+        // sessizce yut — yaziyor gostergesi kritik degil
+      });
+    }
+  }
 
   async function handleSend() {
     const body = draft.trim();
@@ -153,6 +229,23 @@ export function ChatScreen({ route, navigation }: Props) {
                   Henüz mesaj yok — ilk mesajı sen gönder.
                 </Text>
               </View>
+            }
+            ListFooterComponent={
+              isOtherTyping ? (
+                <View style={[styles.bubbleRow, styles.bubbleRowTheirs]}>
+                  <Avatar name={otherUserName} size={28} />
+                  <View
+                    style={[
+                      styles.bubble,
+                      styles.bubbleTailTheirs,
+                      styles.typingBubble,
+                      { backgroundColor: theme.surface, borderColor: theme.border, shadowColor: theme.shadowColor },
+                    ]}
+                  >
+                    <TypingDots color={theme.textSecondary} />
+                  </View>
+                </View>
+              ) : null
             }
             renderItem={({ item }) => {
             const isMine = item.senderId === user?.id;
@@ -223,7 +316,7 @@ export function ChatScreen({ route, navigation }: Props) {
           <View style={[styles.textInputWrapper, { backgroundColor: theme.background, borderColor: theme.border }]}>
             <TextInput
               value={draft}
-              onChangeText={setDraft}
+              onChangeText={handleDraftChange}
               placeholder="Mesajınızı yazın..."
               placeholderTextColor={theme.textSecondary}
               style={{ color: theme.textPrimary, fontSize: 14, paddingVertical: 4 }}
@@ -274,6 +367,8 @@ const styles = StyleSheet.create({
   },
   bubbleTailMine: { borderBottomRightRadius: 4 },
   bubbleTailTheirs: { borderBottomLeftRadius: 4 },
+  typingBubble: { marginLeft: spacing.xs, paddingVertical: spacing.sm + 2 },
+  typingDot: { width: 6, height: 6, borderRadius: 3 },
   metaRow: { flexDirection: "row", alignItems: "center", alignSelf: "flex-end", marginTop: 4 },
   inputBar: {
     flexDirection: "row",
