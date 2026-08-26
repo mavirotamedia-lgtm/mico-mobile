@@ -37,10 +37,16 @@ export function SocialAuthButtons() {
     }
   }, []);
 
+  // expo-auth-session, ilgili platform icin client ID `undefined` ise hook
+  // MOUNT ANINDA (butona basilmadan) senkron hata firlatiyor — kurulum
+  // tamamlanana kadar butonu render edebilmek icin gecerli ama kullanilmayan
+  // bir placeholder veriyoruz (handleGooglePress zaten GOOGLE_CONFIGURED
+  // degilse promptGoogleAsync'i hic cagirmiyor, yani bu deger asla gercek
+  // bir istekte kullanilmiyor).
   const [, googleResponse, promptGoogleAsync] = Google.useIdTokenAuthRequest({
-    iosClientId: GOOGLE_IOS_CLIENT_ID || undefined,
-    androidClientId: GOOGLE_ANDROID_CLIENT_ID || undefined,
-    webClientId: GOOGLE_WEB_CLIENT_ID || undefined,
+    iosClientId: GOOGLE_IOS_CLIENT_ID || "not-configured",
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID || "not-configured",
+    webClientId: GOOGLE_WEB_CLIENT_ID || "not-configured",
   });
 
   useEffect(() => {
