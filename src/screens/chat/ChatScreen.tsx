@@ -21,7 +21,7 @@ import { uploadImage } from "@/api/uploads";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
-import { Text, Avatar, Header, ScreenContainer, Touchable, useToast } from "@/components/ui";
+import { Text, Avatar, Header, ScreenContainer, Touchable, UserActionsSheet, useToast } from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { Message } from "@/types/mico";
 import { ApiError } from "@/api/client";
@@ -78,7 +78,7 @@ function TypingDots({ color }: { color: string }) {
 }
 
 export function ChatScreen({ route, navigation }: Props) {
-  const { conversationId, otherUserName } = route.params;
+  const { conversationId, otherUserName, otherUserId } = route.params;
   const { user } = useAuth();
   const { theme } = useTheme();
   const { show } = useToast();
@@ -89,6 +89,7 @@ export function ChatScreen({ route, navigation }: Props) {
   const [pendingImage, setPendingImage] = useState<{ uri: string; mimeType?: string } | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [isOtherTyping, setIsOtherTyping] = useState(false);
+  const [isActionsSheetVisible, setIsActionsSheetVisible] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const typingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const listRef = useRef<FlatList<Message>>(null);
@@ -232,7 +233,12 @@ export function ChatScreen({ route, navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <Header title={otherUserName} onBack={() => navigation.goBack()} />
+      <Header
+        title={otherUserName}
+        onBack={() => navigation.goBack()}
+        rightIcon="ellipsis-vertical"
+        onRightPress={() => setIsActionsSheetVisible(true)}
+      />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={80}>
         {isLoading ? (
@@ -404,6 +410,16 @@ export function ChatScreen({ route, navigation }: Props) {
           ) : null}
         </Touchable>
       </Modal>
+
+      <UserActionsSheet
+        visible={isActionsSheetVisible}
+        onClose={() => setIsActionsSheetVisible(false)}
+        targetUserId={otherUserId}
+        targetUserName={otherUserName}
+        contextType="CONVERSATION"
+        contextId={conversationId}
+        onBlocked={() => navigation.goBack()}
+      />
     </ScreenContainer>
   );
 }

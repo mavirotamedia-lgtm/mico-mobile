@@ -164,3 +164,22 @@ export type Favorite = {
 };
 
 export type Paginated<T> = { items: T[]; page: number; pageSize: number; hasMore: boolean };
+
+export type BlockedUser = { id: string; name: string; avatarUrl: string | null };
+
+export type ReportReason = "INAPPROPRIATE_CONTENT" | "SPAM" | "FRAUD" | "OTHER";
+
+export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
+  INAPPROPRIATE_CONTENT: "Uygunsuz içerik",
+  SPAM: "Spam",
+  FRAUD: "Dolandırıcılık",
+  OTHER: "Diğer",
+};
+
+export type CreateReportInput = {
+  reportedUserId: string;
+  reason: ReportReason;
+  details?: string;
+  contextType?: string;
+  contextId?: string;
+};

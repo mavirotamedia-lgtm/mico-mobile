@@ -63,3 +63,8 @@ export async function logout(): Promise<void> {
   }).catch(() => {});
   await clearTokens();
 }
+
+export async function deleteAccount(): Promise<void> {
+  await apiRequest("/auth/me", { method: "DELETE" });
+  await clearTokens();
+}

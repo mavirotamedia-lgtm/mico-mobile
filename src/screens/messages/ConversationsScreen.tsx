@@ -69,7 +69,7 @@ export function ConversationsScreen({ navigation }: Props) {
           const other = item.participantAId === user?.id ? item.participantB : item.participantA;
           return (
             <Card
-              onPress={() => navigation.navigate("Chat", { conversationId: item.id, otherUserName: other.name })}
+              onPress={() => navigation.navigate("Chat", { conversationId: item.id, otherUserName: other.name, otherUserId: other.id })}
               style={{ flexDirection: "row", alignItems: "center", marginBottom: spacing.sm }}
             >
               <Avatar name={other.name} size={48} />

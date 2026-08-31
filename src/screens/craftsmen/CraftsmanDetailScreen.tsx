@@ -8,7 +8,7 @@ import * as reviewsApi from "@/api/reviews";
 import * as favoritesApi from "@/api/favorites";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
-import { Text, Card, Avatar, Rating, Badge, Button, Header, ScreenContainer, Reveal, useToast } from "@/components/ui";
+import { Text, Card, Avatar, Rating, Badge, Button, Header, ScreenContainer, Reveal, UserActionsSheet, useToast } from "@/components/ui";
 import { useAuth } from "@/store/AuthContext";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { Craftsman, Review } from "@/types/mico";
@@ -32,6 +32,7 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
   const [isMessaging, setIsMessaging] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const [isActionsSheetVisible, setIsActionsSheetVisible] = useState(false);
 
   useEffect(() => {
     craftsmenApi
@@ -83,7 +84,11 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
     setIsMessaging(true);
     try {
       const conversation = await conversationsApi.getOrCreateConversation(craftsman.userId);
-      navigation.navigate("Chat", { conversationId: conversation.id, otherUserName: craftsman.businessName ?? "Usta" });
+      navigation.navigate("Chat", {
+        conversationId: conversation.id,
+        otherUserName: craftsman.businessName ?? "Usta",
+        otherUserId: craftsman.userId,
+      });
     } catch (e) {
       show(e instanceof ApiError ? e.message : "Sohbet başlatılamadı.", "error");
     } finally {
@@ -96,8 +101,10 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
       <Header
         title="Usta Profili"
         onBack={() => navigation.goBack()}
-        rightIcon={isFavorited ? "heart" : "heart-outline"}
-        onRightPress={handleToggleFavorite}
+        rightActions={[
+          { icon: isFavorited ? "heart" : "heart-outline", onPress: handleToggleFavorite },
+          ...(craftsman ? [{ icon: "ellipsis-vertical" as const, onPress: () => setIsActionsSheetVisible(true) }] : []),
+        ]}
       />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1 }}>
         {craftsman ? (
@@ -181,6 +188,18 @@ export function CraftsmanDetailScreen({ route, navigation }: Props) {
           </View>
         )}
       </ScrollView>
+
+      {craftsman ? (
+        <UserActionsSheet
+          visible={isActionsSheetVisible}
+          onClose={() => setIsActionsSheetVisible(false)}
+          targetUserId={craftsman.userId}
+          targetUserName={craftsman.businessName ?? "Usta"}
+          contextType="CRAFTSMAN_PROFILE"
+          contextId={craftsmanId}
+          onBlocked={() => navigation.goBack()}
+        />
+      ) : null}
     </ScreenContainer>
   );
 }

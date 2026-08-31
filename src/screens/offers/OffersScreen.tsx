@@ -219,6 +219,7 @@ export function OffersScreen({ route, navigation }: Props) {
       navigation.navigate("Chat", {
         conversationId: conversation.id,
         otherUserName: offer.craftsmanInfo.businessName ?? "Usta",
+        otherUserId: offer.craftsmanInfo.userId,
       });
     } catch (e) {
       show(e instanceof ApiError ? e.message : "Sohbet başlatılamadı.", "error");

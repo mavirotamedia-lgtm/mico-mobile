@@ -24,12 +24,13 @@ type Props = CompositeScreenProps<
 >;
 
 export function ProfileScreen({ navigation }: Props) {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout, deleteAccount, updateUser } = useAuth();
   const { theme, preference, setPreference } = useTheme();
   const { show } = useToast();
   const insets = useSafeAreaInsets();
   const [isCraftsman, setIsCraftsman] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   async function handlePickAvatar() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -77,6 +78,7 @@ export function ProfileScreen({ navigation }: Props) {
     { icon: "construct-outline", label: "Usta Bul", onPress: () => navigation.navigate("CraftsmanList") },
     { icon: "heart-outline", label: "Favori Ustalarım", onPress: () => navigation.navigate("Favorites") },
     { icon: "chatbubbles-outline", label: "Mesajlarım", onPress: () => navigation.navigate("Conversations") },
+    { icon: "ban-outline", label: "Engellenen Kullanıcılar", onPress: () => navigation.navigate("BlockedUsers") },
     ...(isCraftsman
       ? [
           { icon: "briefcase-outline" as const, label: "Usta Panelim", onPress: () => navigation.navigate("IncomingRequests") },
@@ -91,6 +93,29 @@ export function ProfileScreen({ navigation }: Props) {
       { text: "Vazgeç", style: "cancel" },
       { text: "Çıkış Yap", style: "destructive", onPress: logout },
     ]);
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      "Hesabımı Sil",
+      "Hesabın kalıcı olarak kapatılacak; kişisel bilgilerin (ad, e-posta, telefon, fotoğraf) silinecek ve bir daha giriş yapamayacaksın. Bu işlem geri alınamaz. Emin misin?",
+      [
+        { text: "Vazgeç", style: "cancel" },
+        {
+          text: "Hesabımı Sil",
+          style: "destructive",
+          onPress: async () => {
+            setIsDeletingAccount(true);
+            try {
+              await deleteAccount();
+            } catch (e) {
+              show(e instanceof ApiError ? e.message : "Hesap silinemedi.", "error");
+              setIsDeletingAccount(false);
+            }
+          },
+        },
+      ]
+    );
   }
 
   const themeOptions: { key: "light" | "dark" | "system"; label: string }[] = [
@@ -185,6 +210,17 @@ export function ProfileScreen({ navigation }: Props) {
             Çıkış Yap
           </Text>
         </Touchable>
+
+        <Touchable onPress={handleDeleteAccount} disabled={isDeletingAccount} haptic style={styles.deleteRow}>
+          {isDeletingAccount ? (
+            <ActivityIndicator size="small" color={theme.danger} />
+          ) : (
+            <Ionicons name="trash-outline" size={16} color={theme.danger} />
+          )}
+          <Text variant="caption" weight="semibold" color="danger" style={{ marginLeft: spacing.xs }}>
+            Hesabımı Sil
+          </Text>
+        </Touchable>
       </ScrollView>
     </ScreenContainer>
   );
@@ -195,6 +231,7 @@ const styles = StyleSheet.create({
   menuRow: { flexDirection: "row", alignItems: "center", padding: spacing.md },
   themeOption: { flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 10 },
   logoutRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: spacing.xl, padding: spacing.sm },
+  deleteRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: spacing.xs, padding: spacing.sm },
   avatarTouchable: { position: "relative" },
   editBadge: {
     position: "absolute",

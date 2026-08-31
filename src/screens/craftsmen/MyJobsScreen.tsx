@@ -54,7 +54,7 @@ export function MyJobsScreen({ navigation }: Props) {
     setMessagingId(item.id);
     try {
       const conversation = await conversationsApi.getOrCreateConversation(item.owner.id);
-      navigation.navigate("Chat", { conversationId: conversation.id, otherUserName: item.owner.name });
+      navigation.navigate("Chat", { conversationId: conversation.id, otherUserName: item.owner.name, otherUserId: item.owner.id });
     } catch (e) {
       show(e instanceof ApiError ? e.message : "Sohbet başlatılamadı.", "error");
     } finally {

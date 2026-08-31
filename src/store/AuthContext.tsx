@@ -14,6 +14,7 @@ type AuthContextValue = {
   loginWithGoogle: (idToken: string) => Promise<void>;
   loginWithApple: (identityToken: string, fullName?: { givenName?: string | null; familyName?: string | null }) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   continueAsGuest: () => void;
   exitGuest: () => void;
   updateUser: (user: PublicUser) => void;
@@ -81,6 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // gecerli bir oturuma ihtiyac duyuyor.
         await unregisterPushNotificationsAsync();
         await authApi.logout();
+        setUser(null);
+        setIsGuest(false);
+      },
+      deleteAccount: async () => {
+        // Ayni sebeple logout ile ayni sira: token'lar temizlenmeden once.
+        await unregisterPushNotificationsAsync();
+        await authApi.deleteAccount();
         setUser(null);
         setIsGuest(false);
       },

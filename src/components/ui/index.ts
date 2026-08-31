@@ -16,3 +16,4 @@ export { Reveal } from "@/components/ui/Reveal";
 export { Skeleton } from "@/components/ui/Skeleton";
 export { BoatVisual } from "@/components/ui/BoatVisual";
 export { ServiceStatusStepper } from "@/components/ui/ServiceStatusStepper";
+export { UserActionsSheet } from "@/components/ui/UserActionsSheet";
