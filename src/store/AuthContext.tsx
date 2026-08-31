@@ -10,7 +10,7 @@ type AuthContextValue = {
   isGuest: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (input: { email: string; password: string; name: string; phone?: string }) => Promise<void>;
+  register: (input: { email: string; password: string; name: string; phone?: string; acceptedTerms: true }) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   loginWithApple: (identityToken: string, fullName?: { givenName?: string | null; familyName?: string | null }) => Promise<void>;
   logout: () => Promise<void>;

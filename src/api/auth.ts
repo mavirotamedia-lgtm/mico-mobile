@@ -16,6 +16,7 @@ export async function register(input: {
   password: string;
   name: string;
   phone?: string;
+  acceptedTerms: true;
 }): Promise<PublicUser> {
   const result = await apiRequest<AuthResult>("/auth/register", {
     method: "POST",

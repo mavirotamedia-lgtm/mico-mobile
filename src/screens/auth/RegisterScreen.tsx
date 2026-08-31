@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
 import { palette, radius, spacing } from "@/theme/tokens";
-import { Text, Button, Input } from "@/components/ui";
+import { Text, Button, Input, Modal } from "@/components/ui";
 import type { AuthStackParamList } from "@/navigation/RootNavigator";
 import { ApiError } from "@/api/client";
+import { USER_AGREEMENT, KVKK_NOTICE, type LegalDocument } from "@/lib/legalTexts";
 
 const BG_IMAGE = "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1200&q=70";
 
@@ -21,12 +23,15 @@ export function RegisterScreen({ navigation }: Props) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [legalDoc, setLegalDoc] = useState<LegalDocument | null>(null);
 
   async function handleSubmit() {
+    if (!acceptedTerms) return;
     setError(null);
     setIsSubmitting(true);
     try {
-      await register({ name: name.trim(), email: email.trim(), password });
+      await register({ name: name.trim(), email: email.trim(), password, acceptedTerms: true });
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Kayıt oluşturulamadı.");
     } finally {
@@ -77,6 +82,32 @@ export function RegisterScreen({ navigation }: Props) {
               onChangeText={setPassword}
             />
 
+            <View style={styles.consentRow}>
+              <Pressable
+                onPress={() => setAcceptedTerms((v) => !v)}
+                hitSlop={8}
+                style={[
+                  styles.checkbox,
+                  {
+                    borderColor: acceptedTerms ? theme.primary : theme.border,
+                    backgroundColor: acceptedTerms ? theme.primary : "transparent",
+                  },
+                ]}
+              >
+                {acceptedTerms ? <Ionicons name="checkmark" size={14} color={theme.onPrimary} /> : null}
+              </Pressable>
+              <Text variant="caption" color="secondary" style={{ flex: 1, marginLeft: spacing.sm, lineHeight: 18 }}>
+                <Text variant="caption" color="accent" weight="bold" onPress={() => setLegalDoc(USER_AGREEMENT)}>
+                  Kullanıcı Sözleşmesi
+                </Text>
+                {"'ni ve "}
+                <Text variant="caption" color="accent" weight="bold" onPress={() => setLegalDoc(KVKK_NOTICE)}>
+                  KVKK Aydınlatma Metni
+                </Text>
+                {"'ni okudum, onaylıyorum."}
+              </Text>
+            </View>
+
             {error ? (
               <Text variant="bodySmall" color="danger" style={{ marginBottom: spacing.sm }}>
                 {error}
@@ -87,7 +118,7 @@ export function RegisterScreen({ navigation }: Props) {
               label="Kayıt Ol"
               onPress={handleSubmit}
               loading={isSubmitting}
-              disabled={!name || !email || password.length < 8}
+              disabled={!name || !email || password.length < 8 || !acceptedTerms}
               style={{ marginTop: spacing.xs }}
             />
 
@@ -108,12 +139,42 @@ export function RegisterScreen({ navigation }: Props) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={!!legalDoc} onClose={() => setLegalDoc(null)} title={legalDoc?.title}>
+        {legalDoc ? (
+          <View style={{ paddingBottom: spacing.md }}>
+            <Text variant="caption" color="secondary" style={{ marginBottom: spacing.md }}>
+              Son güncelleme: {legalDoc.updatedAt}
+            </Text>
+            {legalDoc.sections.map((section) => (
+              <View key={section.heading} style={{ marginBottom: spacing.md }}>
+                <Text variant="bodySmall" weight="bold" style={{ marginBottom: 4 }}>
+                  {section.heading}
+                </Text>
+                <Text variant="bodySmall" color="secondary" style={{ lineHeight: 20 }}>
+                  {section.body}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: spacing.xl },
+  consentRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: spacing.md },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+  },
   card: {
     width: "100%",
     maxWidth: 400,
