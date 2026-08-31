@@ -1,4 +1,5 @@
-import { View, StyleSheet } from "react-native";
+import { useEffect, useRef } from "react";
+import { View, StyleSheet, Animated, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
 import { spacing } from "@/theme/tokens";
@@ -50,26 +51,24 @@ export function ServiceStatusStepper({ status }: { status: ServiceRequestStatus 
         const isDone = stepNumber <= completedSteps;
         const isCurrent = stepNumber === currentStep;
         const isLast = stepNumber === STEP_LABELS.length;
-        const circleColor = isDone || isCurrent ? theme.primary : theme.surface;
-        const circleBorder = isDone || isCurrent ? theme.primary : theme.border;
-        const lineColor = stepNumber < completedSteps ? theme.primary : theme.border;
+        const lineFilled = stepNumber < completedSteps;
 
         return (
           <View key={label} style={styles.stepWrap}>
             <View style={styles.circleLineRow}>
-              <View style={[styles.circle, { backgroundColor: circleColor, borderColor: circleBorder }]}>
-                {isDone ? (
-                  <Ionicons name="checkmark" size={13} color={theme.onPrimary} />
-                ) : isCurrent ? (
-                  <View style={[styles.currentDot, { backgroundColor: theme.onPrimary }]} />
-                ) : null}
-              </View>
-              {!isLast ? <View style={[styles.line, { backgroundColor: lineColor }]} /> : null}
+              <StepCircle isDone={isDone} isCurrent={isCurrent} theme={theme} />
+              {!isLast ? (
+                <View style={[styles.lineTrack, { backgroundColor: theme.border }]}>
+                  <Animated.View
+                    style={[styles.lineFill, { backgroundColor: theme.success, width: lineFilled ? "100%" : "0%" }]}
+                  />
+                </View>
+              ) : null}
             </View>
             <Text
               variant="caption"
-              weight={isDone || isCurrent ? "semibold" : "regular"}
-              style={{ color: isDone || isCurrent ? theme.textPrimary : theme.textSecondary, marginTop: 4 }}
+              weight={isDone || isCurrent ? "bold" : "regular"}
+              style={{ color: isDone ? theme.success : isCurrent ? theme.textPrimary : theme.textSecondary, marginTop: 6 }}
             >
               {label}
             </Text>
@@ -80,22 +79,110 @@ export function ServiceStatusStepper({ status }: { status: ServiceRequestStatus 
   );
 }
 
+function StepCircle({
+  isDone,
+  isCurrent,
+  theme,
+}: {
+  isDone: boolean;
+  isCurrent: boolean;
+  theme: ReturnType<typeof useTheme>["theme"];
+}) {
+  // Tamamlanan adimda yesil tik hafifce "pop" ile beliriyor — duz bir renk
+  // degisiminden cok daha premium hissettiriyor.
+  const checkScale = useRef(new Animated.Value(isDone ? 1 : 0)).current;
+  // Aktif adimda nabiz gibi genisleyip solan bir hale (glow) — WhatsApp'taki
+  // yaziyor gostergesiyle ayni ruhta, "bu adim su an surmekte" hissi veriyor.
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (isDone) {
+      checkScale.setValue(0);
+      Animated.spring(checkScale, { toValue: 1, useNativeDriver: true, speed: 16, bounciness: 10 }).start();
+    } else {
+      checkScale.setValue(0);
+    }
+  }, [isDone, checkScale]);
+
+  useEffect(() => {
+    if (!isCurrent) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 1100, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [isCurrent, pulse]);
+
+  const circleColor = isDone ? theme.success : isCurrent ? theme.primary : theme.surface;
+  const circleBorder = isDone ? theme.success : isCurrent ? theme.primary : theme.border;
+
+  return (
+    <View style={styles.circleHolder}>
+      {isCurrent ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.pulseRing,
+            {
+              borderColor: theme.primary,
+              opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] }),
+              transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.7] }) }],
+            },
+          ]}
+        />
+      ) : null}
+      <View
+        style={[
+          styles.circle,
+          {
+            backgroundColor: circleColor,
+            borderColor: circleBorder,
+            shadowColor: isDone ? theme.success : theme.primary,
+            shadowOpacity: isDone || isCurrent ? 0.3 : 0,
+          },
+        ]}
+      >
+        {isDone ? (
+          <Animated.View style={{ transform: [{ scale: checkScale }] }}>
+            <Ionicons name="checkmark" size={15} color={theme.onPrimary} />
+          </Animated.View>
+        ) : isCurrent ? (
+          <View style={[styles.currentDot, { backgroundColor: theme.onPrimary }]} />
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "flex-start" },
   stepWrap: { flex: 1, alignItems: "center" },
   circleLineRow: { flexDirection: "row", alignItems: "center", width: "100%" },
+  circleHolder: { alignItems: "center", justifyContent: "center", marginLeft: "auto", marginRight: "auto" },
+  pulseRing: {
+    position: "absolute",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+  },
   circle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: "auto",
-    marginRight: "auto",
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 2,
   },
   currentDot: { width: 8, height: 8, borderRadius: 4 },
-  line: { flex: 1, height: 2, marginHorizontal: -2 },
+  lineTrack: { flex: 1, height: 3, borderRadius: 2, marginHorizontal: -2, overflow: "hidden" },
+  lineFill: { height: "100%", borderRadius: 2 },
   cancelledRow: {
     flexDirection: "row",
     alignItems: "center",
