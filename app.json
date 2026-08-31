@@ -12,7 +12,15 @@
       "usesAppleSignIn": true
     },
     "android": {
-      "package": "com.mavirotamarine.mico"
+      "package": "com.mavirotamarine.mico",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "plugins": [
       "expo-asset",
@@ -36,6 +44,18 @@
           "color": "#060F20"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "dadf7080-fa25-4ed3-af3a-4d60c7e3bffa"
+      }
+    },
+    "owner": "mavirotamarines-team",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/dadf7080-fa25-4ed3-af3a-4d60c7e3bffa"
+    }
   }
 }
