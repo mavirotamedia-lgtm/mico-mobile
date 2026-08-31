@@ -13,7 +13,20 @@ import { uploadImage } from "@/api/uploads";
 import { resolveMediaUrl } from "@/lib/media";
 import { useTheme } from "@/theme/ThemeContext";
 import { radius, spacing } from "@/theme/tokens";
-import { Text, Card, Avatar, Rating, Badge, Button, Header, ScreenContainer, Reveal, Skeleton, useToast } from "@/components/ui";
+import {
+  Text,
+  Card,
+  Avatar,
+  Rating,
+  Badge,
+  Button,
+  Header,
+  ScreenContainer,
+  Reveal,
+  Skeleton,
+  ServiceStatusStepper,
+  useToast,
+} from "@/components/ui";
 import type { AppStackParamList } from "@/navigation/RootNavigator";
 import type { Craftsman, ServiceOffer, ServiceRequestStatus } from "@/types/mico";
 import { ApiError } from "@/api/client";
@@ -238,6 +251,10 @@ export function OffersScreen({ route, navigation }: Props) {
         contentContainerStyle={{ padding: spacing.lg, flexGrow: 1 }}
         ListHeaderComponent={
           <View style={{ marginBottom: spacing.lg }}>
+            <Card style={{ marginBottom: spacing.lg }}>
+              <ServiceStatusStepper status={requestStatus} />
+            </Card>
+
             <Text variant="bodySmall" weight="semibold" color="secondary" style={{ marginBottom: 6 }}>
               Arıza / Motor Fotoğrafları
             </Text>

@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ScrollView, View, Image, StyleSheet } from "react-native";
+import { ScrollView, View, Image, Pressable, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as offersApi from "@/api/offers";
@@ -13,6 +13,16 @@ import { SPECIALTY_LABELS, OFFER_TOKEN_COST } from "@/types/mico";
 import { ApiError } from "@/api/client";
 
 type Props = NativeStackScreenProps<AppStackParamList, "SubmitOffer">;
+
+// Ustanin mesaj alanini elle yazmadan hizlica doldurabilmesi icin hazir
+// sablonlar — bastigi her sablon mevcut metnin sonuna eklenir, boylece
+// birden fazlasini birlestirip kisisellestirebilir.
+const QUICK_OFFER_TEMPLATES = [
+  "Bugün gelip keşif yapabilirim",
+  "1-2 saat içinde teknedeyim",
+  "Yarın uygun olur, saati siz belirleyin",
+  "Fotoğraflara göre tahmini bu fiyat, yerinde netleşir",
+];
 
 export function SubmitOfferScreen({ route, navigation }: Props) {
   const { serviceRequest } = route.params;
@@ -55,6 +65,10 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
     }
   }
 
+  function handleQuickTemplate(template: string) {
+    setMessage((prev) => (prev.trim() ? `${prev.trim()}\n${template}` : template));
+  }
+
   const trimmedPrice = price.trim();
   const isPriceValid = trimmedPrice === "" || !Number.isNaN(Number(trimmedPrice.replace(",", ".")));
 
@@ -94,6 +108,23 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
           icon="cash-outline"
           error={!isPriceValid ? "Geçerli bir tutar girin." : undefined}
         />
+        <Text variant="bodySmall" weight="semibold" color="secondary" style={{ marginBottom: 6 }}>
+          Hızlı Mesaj
+        </Text>
+        <View style={styles.templateRow}>
+          {QUICK_OFFER_TEMPLATES.map((template) => (
+            <Pressable
+              key={template}
+              onPress={() => handleQuickTemplate(template)}
+              style={[styles.templateChip, { borderColor: theme.border, backgroundColor: theme.surface }]}
+            >
+              <Text variant="caption" weight="semibold" color="secondary">
+                {template}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
         <Input
           label="Mesaj (opsiyonel)"
           placeholder="Kısaca kendini ve teklifini tanıt..."
@@ -145,6 +176,8 @@ export function SubmitOfferScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  templateRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.md },
+  templateChip: { borderWidth: 1.5, borderRadius: radius.pill, paddingVertical: 8, paddingHorizontal: 12 },
   photoRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginTop: spacing.sm },
   photoThumb: { width: 64, height: 64, borderRadius: radius.md, borderWidth: 1.5 },
   tokenRow: {

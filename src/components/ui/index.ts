@@ -15,3 +15,4 @@ export { Touchable } from "@/components/ui/Touchable";
 export { Reveal } from "@/components/ui/Reveal";
 export { Skeleton } from "@/components/ui/Skeleton";
 export { BoatVisual } from "@/components/ui/BoatVisual";
+export { ServiceStatusStepper } from "@/components/ui/ServiceStatusStepper";
