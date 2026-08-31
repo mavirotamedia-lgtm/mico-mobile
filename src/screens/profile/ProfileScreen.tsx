@@ -82,7 +82,7 @@ export function ProfileScreen({ navigation }: Props) {
           { icon: "briefcase-outline" as const, label: "Usta Panelim", onPress: () => navigation.navigate("IncomingRequests") },
           { icon: "person-circle-outline" as const, label: "Usta Profilim", onPress: () => navigation.navigate("CraftsmanProfile") },
         ]
-      : [{ icon: "hammer-outline" as const, label: "Usta Ol", onPress: () => navigation.navigate("BecomeCraftsman") }]),
+      : []),
   ];
 
   function handleLogout() {
