@@ -141,6 +141,7 @@ export function BoatDetailScreen({ route, navigation }: Props) {
                   </Text>
                   <Text variant="caption" color="secondary" style={{ marginTop: 4 }}>
                     {formatDate(r.performedAt)}
+                    {r.craftsman?.businessName ? ` · ${r.craftsman.businessName} tarafından yapıldı` : ""}
                   </Text>
                 </View>
                 {r.nextDueDate ? <Badge label={`Sonraki: ${formatDate(r.nextDueDate)}`} tone="warning" /> : null}

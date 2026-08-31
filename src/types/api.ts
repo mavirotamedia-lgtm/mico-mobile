@@ -51,6 +51,10 @@ export type MaintenanceCategory = "ENGINE" | "HULL" | "ELECTRICAL" | "SAFETY" | 
 export type MaintenanceRecord = {
   id: string;
   boatId: string;
+  /** Bir servis talebi tamamlandığında otomatik oluşturulan kayıtlarda dolu — manuel eklenenlerde null. */
+  serviceRequestId: string | null;
+  craftsmanId: string | null;
+  craftsman?: { businessName: string | null } | null;
   title: string;
   description: string;
   category: MaintenanceCategory;

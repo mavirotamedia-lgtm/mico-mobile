@@ -14,6 +14,7 @@ import { CreateServiceRequestScreen } from "@/screens/service-requests/CreateSer
 import { CraftsmanListScreen } from "@/screens/craftsmen/CraftsmanListScreen";
 import { CraftsmanDetailScreen } from "@/screens/craftsmen/CraftsmanDetailScreen";
 import { IncomingRequestsScreen } from "@/screens/craftsmen/IncomingRequestsScreen";
+import { MyJobsScreen } from "@/screens/craftsmen/MyJobsScreen";
 import { CraftsmanProfileScreen } from "@/screens/craftsmen/CraftsmanProfileScreen";
 import { BecomeCraftsmanScreen } from "@/screens/craftsmen/BecomeCraftsmanScreen";
 import { SubmitOfferScreen } from "@/screens/craftsmen/SubmitOfferScreen";
@@ -39,6 +40,7 @@ export type AppStackParamList = {
   CraftsmanList: undefined;
   CraftsmanDetail: { craftsmanId: string };
   IncomingRequests: undefined;
+  MyJobs: undefined;
   CraftsmanProfile: undefined;
   BecomeCraftsman: undefined;
   SubmitOffer: { serviceRequest: ServiceRequest };
@@ -85,6 +87,7 @@ export function RootNavigator() {
           <AppStack.Screen name="CraftsmanList" component={CraftsmanListScreen} />
           <AppStack.Screen name="CraftsmanDetail" component={CraftsmanDetailScreen} />
           <AppStack.Screen name="IncomingRequests" component={IncomingRequestsScreen} />
+          <AppStack.Screen name="MyJobs" component={MyJobsScreen} />
           <AppStack.Screen name="CraftsmanProfile" component={CraftsmanProfileScreen} />
           <AppStack.Screen name="BecomeCraftsman" component={BecomeCraftsmanScreen} />
           <AppStack.Screen name="SubmitOffer" component={SubmitOfferScreen} />

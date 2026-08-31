@@ -10,6 +10,11 @@ export async function listNearbyServiceRequests() {
   return apiRequest<Paginated<ServiceRequest>>("/service-requests/nearby");
 }
 
+// Usta tarafı: teklifinin kabul edildiği tüm işler (durumu ne olursa olsun) — "Yaptığım İşler".
+export async function listMyJobs() {
+  return apiRequest<Paginated<ServiceRequest>>("/service-requests/my-jobs");
+}
+
 export async function getServiceRequest(id: string) {
   return apiRequest<ServiceRequest>(`/service-requests/${id}`);
 }

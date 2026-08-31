@@ -53,6 +53,8 @@ export type ServiceRequest = {
   status: ServiceRequestStatus;
   createdAt: string;
   updatedAt: string;
+  /** Sadece bazı uç noktalarda (ör. /service-requests/my-jobs) dolu gelir. */
+  owner?: { id: string; name: string };
 };
 
 export type CreateServiceRequestInput = {

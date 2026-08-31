@@ -80,6 +80,7 @@ export function ProfileScreen({ navigation }: Props) {
     ...(isCraftsman
       ? [
           { icon: "briefcase-outline" as const, label: "Usta Panelim", onPress: () => navigation.navigate("IncomingRequests") },
+          { icon: "clipboard-outline" as const, label: "Yaptığım İşler", onPress: () => navigation.navigate("MyJobs") },
           { icon: "person-circle-outline" as const, label: "Usta Profilim", onPress: () => navigation.navigate("CraftsmanProfile") },
         ]
       : []),
