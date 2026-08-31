@@ -44,3 +44,22 @@ export async function registerForPushNotificationsAsync() {
     console.warn("Push bildirim kaydı başarısız:", error);
   }
 }
+
+/**
+ * Çıkış yaparken çağrılır — aksi halde cihaz, oturum kapatıldıktan sonra da
+ * o hesabın push bildirimlerini almaya devam ederdi (token backend'de
+ * kayıtlı kalır). Hâlâ geçerli bir oturumken (token'lar temizlenmeden ÖNCE)
+ * çağrılmalı, aksi halde silme isteği kimlik doğrulayamaz.
+ */
+export async function unregisterPushNotificationsAsync() {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== "granted") return;
+
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const tokenResponse = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
+    await notificationsApi.removePushToken(tokenResponse.data);
+  } catch (error) {
+    console.warn("Push token silme başarısız:", error);
+  }
+}

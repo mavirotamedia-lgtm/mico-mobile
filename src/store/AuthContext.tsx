@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import * as authApi from "@/api/auth";
 import { getAccessToken } from "@/api/session";
 import { onAuthFailure } from "@/api/client";
-import { registerForPushNotificationsAsync } from "@/lib/pushNotifications";
+import { registerForPushNotificationsAsync, unregisterPushNotificationsAsync } from "@/lib/pushNotifications";
 import type { PublicUser } from "@/types/api";
 
 type AuthContextValue = {
@@ -77,6 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsGuest(false);
       },
       logout: async () => {
+        // Token'lar temizlenmeden ONCE cagrilmali — silme istegi hala
+        // gecerli bir oturuma ihtiyac duyuyor.
+        await unregisterPushNotificationsAsync();
         await authApi.logout();
         setUser(null);
         setIsGuest(false);
