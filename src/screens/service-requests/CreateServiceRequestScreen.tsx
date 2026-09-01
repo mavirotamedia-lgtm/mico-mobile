@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ScrollView, View, Pressable, Image, StyleSheet, Switch, ActivityIndicator } from "react-native";
+import type { ImageSourcePropType } from "react-native";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,13 +21,13 @@ type Props = NativeStackScreenProps<AppStackParamList, "CreateServiceRequest">;
 
 const SPECIALTIES = Object.entries(SPECIALTY_LABELS) as [CraftsmanSpecialty, string][];
 
-const SPECIALTY_ICON: Record<CraftsmanSpecialty, keyof typeof Ionicons.glyphMap> = {
-  ENGINE: "cog-outline",
-  ELECTRICAL: "flash-outline",
-  HULL_FIBERGLASS: "boat-outline",
-  UPHOLSTERY_CANVAS: "cut-outline",
-  WINTERIZATION_MAINTENANCE: "snow-outline",
-  OTHER: "ellipsis-horizontal-outline",
+const SPECIALTY_ICON: Record<CraftsmanSpecialty, ImageSourcePropType> = {
+  ENGINE: require("../../../assets/categories/category-engine.png"),
+  ELECTRICAL: require("../../../assets/categories/category-electrical.png"),
+  HULL_FIBERGLASS: require("../../../assets/categories/category-hull.png"),
+  UPHOLSTERY_CANVAS: require("../../../assets/categories/category-upholstery.png"),
+  WINTERIZATION_MAINTENANCE: require("../../../assets/categories/category-winterization.png"),
+  OTHER: require("../../../assets/categories/category-other.png"),
 };
 
 export function CreateServiceRequestScreen({ route, navigation }: Props) {
@@ -315,7 +316,7 @@ function CategoryCard({
   theme,
 }: {
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: ImageSourcePropType;
   active: boolean;
   onPress: () => void;
   theme: ReturnType<typeof useTheme>["theme"];
@@ -325,14 +326,19 @@ function CategoryCard({
       onPress={onPress}
       style={[
         styles.categoryCard,
-        { borderColor: active ? theme.primary : theme.border, backgroundColor: active ? theme.primary : theme.surface },
+        { borderColor: active ? theme.primary : theme.border, backgroundColor: theme.surface },
       ]}
     >
-      <Ionicons name={icon} size={26} color={active ? theme.onPrimary : theme.primary} />
+      {active ? (
+        <View style={[styles.categoryCheck, { backgroundColor: theme.primary, borderColor: theme.surface }]}>
+          <Ionicons name="checkmark" size={11} color={theme.onPrimary} />
+        </View>
+      ) : null}
+      <Image source={icon} style={styles.categoryIcon} resizeMode="contain" />
       <Text
         variant="bodySmall"
         weight="semibold"
-        style={{ color: active ? theme.onPrimary : theme.textPrimary, marginTop: 6, textAlign: "center" }}
+        style={{ color: active ? theme.primary : theme.textPrimary, marginTop: 6, textAlign: "center" }}
       >
         {label}
       </Text>
@@ -349,6 +355,18 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: radius.lg,
     paddingVertical: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  categoryIcon: { width: 52, height: 52 },
+  categoryCheck: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
   },
