@@ -1,4 +1,5 @@
-import { View, StyleSheet } from "react-native";
+import { View, Image, StyleSheet } from "react-native";
+import type { ImageSourcePropType } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/theme/ThemeContext";
@@ -9,8 +10,7 @@ import { Touchable } from "@/components/ui/Touchable";
 export type BottomNavItem = {
   key: string;
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  iconActive?: keyof typeof Ionicons.glyphMap;
+  icon: ImageSourcePropType;
 };
 
 type Props = {
@@ -43,7 +43,7 @@ export function BottomNav({ items, activeKey, onPress, onCenterPress }: Props) {
             { backgroundColor: theme.primary, shadowColor: theme.shadowColor, borderColor: theme.tabBarBg },
           ]}
         >
-          <Ionicons name="add" size={26} color={theme.onPrimary} />
+          <Ionicons name="add" size={26} color={theme.accent} />
         </View>
       </Touchable>
 
@@ -65,11 +65,10 @@ function NavButton({
   theme: ReturnType<typeof useTheme>["theme"];
 }) {
   const color = active ? theme.primary : theme.tabBarInactive;
-  const iconName = active && item.iconActive ? item.iconActive : item.icon;
 
   return (
     <Touchable onPress={() => onPress(item.key)} style={styles.navButton} hitSlop={6} scaleTo={0.9} haptic>
-      <Ionicons name={iconName} size={22} color={color} />
+      <Image source={item.icon} style={[styles.navIcon, { opacity: active ? 1 : 0.55 }]} resizeMode="contain" />
       <Text variant="caption" weight={active ? "semibold" : "medium"} style={{ color, marginTop: 3 }}>
         {item.label}
       </Text>
@@ -87,6 +86,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   navButton: { flex: 1, alignItems: "center" },
+  navIcon: { width: 26, height: 26 },
   centerWrapper: { flex: 1, alignItems: "center", marginTop: -28 },
   centerButton: {
     width: 52,

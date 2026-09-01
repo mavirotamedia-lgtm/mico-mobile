@@ -17,10 +17,10 @@ export type MainTabParamList = {
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const TAB_ITEMS = [
-  { key: "Home", label: "Ana Sayfa", icon: "home-outline", iconActive: "home" },
-  { key: "MyBoat", label: "Teknem", icon: "boat-outline", iconActive: "boat" },
-  { key: "ServiceRequests", label: "Teklifler", icon: "pricetag-outline", iconActive: "pricetag" },
-  { key: "Profile", label: "Profil", icon: "person-outline", iconActive: "person" },
+  { key: "Home", label: "Ana Sayfa", icon: require("../../assets/tab-icons/tab-home.png") },
+  { key: "MyBoat", label: "Teknem", icon: require("../../assets/tab-icons/tab-boat.png") },
+  { key: "ServiceRequests", label: "Teklifler", icon: require("../../assets/tab-icons/tab-offers.png") },
+  { key: "Profile", label: "Profil", icon: require("../../assets/tab-icons/tab-profile.png") },
 ] as const;
 
 type Props = NativeStackScreenProps<AppStackParamList, "MainTabs">;
