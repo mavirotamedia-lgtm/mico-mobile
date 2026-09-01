@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
-import { ScrollView, View, StyleSheet, RefreshControl } from "react-native";
+import { ScrollView, View, Image, StyleSheet, RefreshControl } from "react-native";
+import type { ImageSourcePropType } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -28,11 +29,20 @@ type Props = CompositeScreenProps<
 
 type QuickAction = {
   key: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: ImageSourcePropType;
   label: string;
   onPress: () => void;
   primary?: boolean;
 };
+
+const QUICK_ACTION_ICON = {
+  newRequest: require("../../../assets/home-icons/home-newrequest.png"),
+  findCraftsman: require("../../../assets/home-icons/home-find-craftsman.png"),
+  maintenance: require("../../../assets/home-icons/home-maintenance.png"),
+  offers: require("../../../assets/home-icons/home-offers.png"),
+  myBoat: require("../../../assets/home-icons/home-myboat.png"),
+  profile: require("../../../assets/home-icons/home-profile.png"),
+} as const;
 
 export function HomeScreen({ navigation }: Props) {
   const { user } = useAuth();
@@ -76,17 +86,17 @@ export function HomeScreen({ navigation }: Props) {
   // Tekne varsa "Bakim Takibi" dogrudan o teknenin detayina gider (bakim
   // gecmisi orada) — teknesi yoksa once tekne eklemeye yonlendirir.
   const quickActions: QuickAction[] = [
-    { key: "newRequest", icon: "add-circle", label: "Yeni Talep", primary: true, onPress: () => navigation.navigate("CreateServiceRequest") },
-    { key: "findCraftsman", icon: "construct-outline", label: "Usta Bul", onPress: () => navigation.navigate("CraftsmanList") },
+    { key: "newRequest", icon: QUICK_ACTION_ICON.newRequest, label: "Yeni Talep", primary: true, onPress: () => navigation.navigate("CreateServiceRequest") },
+    { key: "findCraftsman", icon: QUICK_ACTION_ICON.findCraftsman, label: "Usta Bul", onPress: () => navigation.navigate("CraftsmanList") },
     {
       key: "maintenance",
-      icon: "build-outline",
+      icon: QUICK_ACTION_ICON.maintenance,
       label: "Bakım Takibi",
       onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
     },
-    { key: "offers", icon: "pricetag-outline", label: "Tekliflerim", onPress: () => navigation.navigate("ServiceRequests") },
-    { key: "myBoat", icon: "boat-outline", label: "Teknem", onPress: () => navigation.navigate("MyBoat") },
-    { key: "profile", icon: "person-outline", label: "Profilim", onPress: () => navigation.navigate("Profile") },
+    { key: "offers", icon: QUICK_ACTION_ICON.offers, label: "Tekliflerim", onPress: () => navigation.navigate("ServiceRequests") },
+    { key: "myBoat", icon: QUICK_ACTION_ICON.myBoat, label: "Teknem", onPress: () => navigation.navigate("MyBoat") },
+    { key: "profile", icon: QUICK_ACTION_ICON.profile, label: "Profilim", onPress: () => navigation.navigate("Profile") },
   ];
 
   if (isInitialLoading) {
@@ -220,7 +230,7 @@ export function HomeScreen({ navigation }: Props) {
                       { backgroundColor: action.primary ? "rgba(255,255,255,0.18)" : theme.surfaceAlt },
                     ]}
                   >
-                    <Ionicons name={action.icon} size={22} color={action.primary ? theme.onPrimary : theme.primary} />
+                    <Image source={action.icon} style={styles.quickIconImage} resizeMode="contain" />
                   </View>
                   <Text
                     variant="bodySmall"
@@ -334,5 +344,6 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  quickIconImage: { width: 30, height: 30 },
   sectionHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
 });
