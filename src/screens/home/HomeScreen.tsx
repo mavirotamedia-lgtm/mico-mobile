@@ -48,6 +48,9 @@ const QUICK_ACTION_ICON = {
  * kaynak gorsele gore oranli (0-1) konum/boyut. */
 type PromoGlowSpec = { relX: number; relY: number; relSize: number; colorA: string; colorB: string };
 
+/** Bos takvim hucrelerine sirayla "isaretlenen" yesil tik noktalari. */
+type PromoChecklistSpec = { relX: number; relY: number; relSize: number };
+
 type PromoBanner = {
   key: string;
   titleLine1: string;
@@ -57,6 +60,7 @@ type PromoBanner = {
   source: ImageSourcePropType;
   aspect: number;
   glow: PromoGlowSpec;
+  checklist?: readonly PromoChecklistSpec[];
   onPress: () => void;
 };
 
@@ -85,8 +89,15 @@ const PROMO_IMAGE = {
   },
   calendar: {
     source: require("../../../assets/promo-icons/promo-calendar.png"),
-    aspect: 832 / 756,
-    glow: { relX: 0.077, relY: 0.792, relSize: 0.16, ...GOLD_GLOW },
+    aspect: 900 / 647,
+    glow: { relX: 0.115, relY: 0.71, relSize: 0.18, ...GOLD_GLOW },
+    // Takvimin ust sirasindaki 3 bos hucreye sirayla "isleniyor" gibi
+    // beliren yesil tikler.
+    checklist: [
+      { relX: 0.201, relY: 0.339, relSize: 0.06 },
+      { relX: 0.314, relY: 0.339, relSize: 0.06 },
+      { relX: 0.54, relY: 0.339, relSize: 0.06 },
+    ],
   },
 } as const;
 
@@ -147,6 +158,15 @@ export function HomeScreen({ navigation }: Props) {
 
   const promoBanners: PromoBanner[] = [
     {
+      key: "promo-calendar",
+      titleLine1: "Bakım takvimini",
+      titleLine2: "oluştur",
+      accentColor: theme.accent,
+      subtitle: "Bakım tarihlerini unutma, tek yerden takip et.",
+      ...PROMO_IMAGE.calendar,
+      onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
+    },
+    {
       key: "promo-support",
       titleLine1: "İhtiyacın olduğunda",
       titleLine2: "MİÇO yanında",
@@ -181,15 +201,6 @@ export function HomeScreen({ navigation }: Props) {
       subtitle: "Gelen teklifleri incele, en uygun ustayı seç.",
       ...PROMO_IMAGE.offers,
       onPress: () => navigation.navigate("ServiceRequests"),
-    },
-    {
-      key: "promo-calendar",
-      titleLine1: "Bakım takvimini",
-      titleLine2: "oluştur",
-      accentColor: theme.accent,
-      subtitle: "Bakım tarihlerini unutma, tek yerden takip et.",
-      ...PROMO_IMAGE.calendar,
-      onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
     },
   ];
 
@@ -435,7 +446,7 @@ function PromoBannerCarousel({ banners, theme }: { banners: PromoBanner[]; theme
                 {banner.subtitle}
               </Text>
             </View>
-            <PromoImage source={banner.source} aspect={banner.aspect} glow={banner.glow} />
+            <PromoImage source={banner.source} aspect={banner.aspect} glow={banner.glow} checklist={banner.checklist} />
           </Animated.View>
         </LinearGradient>
       </Touchable>
@@ -465,10 +476,23 @@ function containFit(containerW: number, containerH: number, sourceAspect: number
 }
 
 /** Gorsel + hafif nefes alan zoom + tek bir odak noktasinda animasyonlu isik rozeti. */
-function PromoImage({ source, aspect, glow }: { source: ImageSourcePropType; aspect: number; glow: PromoGlowSpec }) {
+const CHECKLIST_GREEN = "#1FA669";
+
+function PromoImage({
+  source,
+  aspect,
+  glow,
+  checklist,
+}: {
+  source: ImageSourcePropType;
+  aspect: number;
+  glow: PromoGlowSpec;
+  checklist?: readonly PromoChecklistSpec[];
+}) {
   const [containerSize, setContainerSize] = useState<{ w: number; h: number } | null>(null);
   const pulse = useRef(new Animated.Value(0)).current;
   const colorPhase = useRef(new Animated.Value(0)).current;
+  const checklistAnims = useRef((checklist ?? []).map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
     const zoomLoop = Animated.loop(
@@ -490,6 +514,38 @@ function PromoImage({ source, aspect, glow }: { source: ImageSourcePropType; asp
       colorLoop.stop();
     };
   }, [pulse, colorPhase]);
+
+  // Bos takvim hucrelerine sirayla "isleniyor" gibi beliren yesil tikler:
+  // bir bir pop-in, bir sure ekranda kal, birlikte sonup basa dön.
+  useEffect(() => {
+    if (checklistAnims.length === 0) return;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const cycle = () => {
+      if (cancelled) return;
+      checklistAnims.forEach((v) => v.setValue(0));
+      Animated.stagger(
+        420,
+        checklistAnims.map((v) => Animated.spring(v, { toValue: 1, friction: 5, tension: 60, useNativeDriver: true }))
+      ).start(() => {
+        if (cancelled) return;
+        timeoutId = setTimeout(() => {
+          if (cancelled) return;
+          Animated.parallel(checklistAnims.map((v) => Animated.timing(v, { toValue: 0, duration: 300, useNativeDriver: true }))).start(() => {
+            if (cancelled) return;
+            timeoutId = setTimeout(cycle, 500);
+          });
+        }, 1600);
+      });
+    };
+
+    cycle();
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [checklistAnims]);
 
   const imageScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] });
   const glowColor = colorPhase.interpolate({ inputRange: [0, 1], outputRange: [glow.colorA, glow.colorB] });
@@ -518,6 +574,33 @@ function PromoImage({ source, aspect, glow }: { source: ImageSourcePropType; asp
           }}
         />
       ) : null}
+      {fit
+        ? checklist?.map((c, i) => {
+            const size = c.relSize * fit.w;
+            const v = checklistAnims[i];
+            return (
+              <Animated.View
+                key={i}
+                pointerEvents="none"
+                style={{
+                  position: "absolute",
+                  left: fit.offsetX + c.relX * fit.w - size / 2,
+                  top: fit.offsetY + c.relY * fit.h - size / 2,
+                  width: size,
+                  height: size,
+                  borderRadius: size / 2,
+                  backgroundColor: CHECKLIST_GREEN,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: v,
+                  transform: [{ scale: v }],
+                }}
+              >
+                <Ionicons name="checkmark" size={size * 0.62} color="#FFFFFF" />
+              </Animated.View>
+            );
+          })
+        : null}
     </View>
   );
 }
