@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ScrollView, View, Image, StyleSheet, RefreshControl } from "react-native";
+import { ScrollView, FlatList, View, Image, StyleSheet, RefreshControl, useWindowDimensions } from "react-native";
 import type { ImageSourcePropType } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,13 +10,14 @@ import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
-import { spacing, radius } from "@/theme/tokens";
+import { spacing, radius, palette } from "@/theme/tokens";
 import { Text, Card, Rating, Badge, Avatar, BoatVisual, ScreenContainer, Touchable, Reveal, Skeleton, useToast } from "@/components/ui";
 import * as boatsApi from "@/api/boats";
 import * as craftsmenApi from "@/api/craftsmen";
 import * as notificationsApi from "@/api/notifications";
+import * as maintenanceApi from "@/api/maintenance";
 import { ApiError } from "@/api/client";
-import type { Boat } from "@/types/api";
+import type { Boat, MaintenanceRecord } from "@/types/api";
 import type { Craftsman } from "@/types/mico";
 import { SPECIALTY_LABELS } from "@/types/mico";
 import type { MainTabParamList } from "@/navigation/MainTabs";
@@ -35,6 +36,15 @@ type QuickAction = {
   primary?: boolean;
 };
 
+type HomeBanner = {
+  key: string;
+  title: string;
+  subtitle: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  colors: readonly [string, string];
+  onPress: () => void;
+};
+
 const QUICK_ACTION_ICON = {
   newRequest: require("../../../assets/home-icons/home-newrequest.png"),
   findCraftsman: require("../../../assets/home-icons/home-find-craftsman.png"),
@@ -51,6 +61,7 @@ export function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [boat, setBoat] = useState<Boat | null>(null);
   const [craftsmen, setCraftsmen] = useState<Craftsman[]>([]);
+  const [maintenanceRecords, setMaintenanceRecords] = useState<MaintenanceRecord[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -64,9 +75,11 @@ export function HomeScreen({ navigation }: Props) {
           craftsmenApi.listCraftsmen(),
           notificationsApi.listNotifications(),
         ]);
-        setBoat(boats[0] ?? null);
+        const primaryBoat = boats[0] ?? null;
+        setBoat(primaryBoat);
         setCraftsmen(craftsmenRes.items.slice(0, 4));
         setUnreadCount(notificationsRes.items.filter((n) => !n.readAt).length);
+        setMaintenanceRecords(primaryBoat ? await maintenanceApi.listMaintenance(primaryBoat.id).catch(() => []) : []);
       } catch (e) {
         show(e instanceof ApiError ? e.message : "Ana sayfa yüklenemedi.", "error");
       } finally {
@@ -99,6 +112,64 @@ export function HomeScreen({ navigation }: Props) {
     { key: "profile", icon: QUICK_ACTION_ICON.profile, label: "Profilim", onPress: () => navigation.navigate("Profile") },
   ];
 
+  // Bakim rehberindeki en yakin planli tarihe gore kisisellestirilmis
+  // hatirlatma banner'i — sadece gecikmis veya 30 gun icinde olan varsa gosterilir.
+  const reminderBanners: HomeBanner[] = [];
+  const nextDue = maintenanceRecords
+    .filter((r) => r.nextDueDate)
+    .sort((a, b) => new Date(a.nextDueDate as string).getTime() - new Date(b.nextDueDate as string).getTime())[0];
+  if (nextDue && boat) {
+    const diffDays = Math.ceil((new Date(nextDue.nextDueDate as string).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+    if (diffDays < 0) {
+      reminderBanners.push({
+        key: "maint-overdue",
+        title: `${nextDue.title} bakımı gecikti`,
+        subtitle: `${boat.name} için ${Math.abs(diffDays)} gün önce planlanmıştı`,
+        icon: "alert-circle",
+        colors: [palette.danger500, palette.navy900],
+        onPress: () => navigation.navigate("BoatDetail", { boatId: boat.id }),
+      });
+    } else if (diffDays <= 30) {
+      reminderBanners.push({
+        key: "maint-upcoming",
+        title: `${nextDue.title} zamanı yaklaşıyor`,
+        subtitle: diffDays === 0 ? `${boat.name} için bugün planlandı` : `${boat.name} için ${diffDays} gün kaldı`,
+        icon: "time-outline",
+        colors: [palette.gold500, palette.navy800],
+        onPress: () => navigation.navigate("BoatDetail", { boatId: boat.id }),
+      });
+    }
+  }
+
+  const featureBanners: HomeBanner[] = [
+    {
+      key: "feature-guide",
+      title: "Bakım Rehberini Keşfet",
+      subtitle: "Teknenin geçmişini ve gelecek bakımlarını tek yerden takip et",
+      icon: "book-outline",
+      colors: [palette.navy600, palette.navy950],
+      onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
+    },
+    {
+      key: "feature-craftsmen",
+      title: "Güvenilir Ustalarla Tanış",
+      subtitle: "Bölgendeki onaylı ustaları incele, en uygun teklifi seç",
+      icon: "construct-outline",
+      colors: [palette.navy700, palette.navy950],
+      onPress: () => navigation.navigate("CraftsmanList"),
+    },
+    {
+      key: "feature-request",
+      title: "Hızlı Talep Oluştur",
+      subtitle: "İhtiyacını anlat, ustalar sana teklif göndersin",
+      icon: "flash-outline",
+      colors: [palette.navy600, palette.navy800],
+      onPress: () => navigation.navigate("CreateServiceRequest"),
+    },
+  ];
+
+  const banners: HomeBanner[] = [...reminderBanners, ...featureBanners];
+
   if (isInitialLoading) {
     return (
       <ScreenContainer>
@@ -116,6 +187,8 @@ export function HomeScreen({ navigation }: Props) {
         </LinearGradient>
 
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
+          <Skeleton width="100%" height={112} radius={radius.xl} style={{ marginBottom: spacing.lg }} />
+
           <Skeleton width={140} height={20} style={{ marginBottom: spacing.sm }} />
           <View style={styles.quickGrid}>
             {Array.from({ length: 6 }).map((_, i) => (
@@ -207,6 +280,12 @@ export function HomeScreen({ navigation }: Props) {
         </LinearGradient>
 
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
+          <Reveal delay={40}>
+            <BannerCarousel banners={banners} theme={theme} />
+          </Reveal>
+        </View>
+
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
           <Reveal delay={70}>
             <SectionTitle>Hızlı İşlemler</SectionTitle>
             <View style={styles.quickGrid}>
@@ -295,6 +374,58 @@ export function HomeScreen({ navigation }: Props) {
   );
 }
 
+function BannerCarousel({ banners, theme }: { banners: HomeBanner[]; theme: ReturnType<typeof useTheme>["theme"] }) {
+  const { width } = useWindowDimensions();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const cardWidth = width - spacing.lg * 2;
+
+  if (banners.length === 0) return null;
+
+  return (
+    <View>
+      <FlatList
+        data={banners}
+        keyExtractor={(b) => b.key}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        decelerationRate="fast"
+        onMomentumScrollEnd={(e) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.x / cardWidth);
+          setActiveIndex(Math.max(0, Math.min(idx, banners.length - 1)));
+        }}
+        renderItem={({ item }) => (
+          <Touchable onPress={item.onPress} haptic scaleTo={0.98} style={{ width: cardWidth }}>
+            <LinearGradient colors={item.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.bannerCard}>
+              <View style={{ flex: 1 }}>
+                <Text variant="h2" weight="extrabold" color="onDark">
+                  {item.title}
+                </Text>
+                <Text variant="bodySmall" color="onDark" style={{ marginTop: 4, opacity: 0.85 }}>
+                  {item.subtitle}
+                </Text>
+              </View>
+              <View style={styles.bannerIconWrap}>
+                <Ionicons name={item.icon} size={26} color={theme.textOnDark} />
+              </View>
+            </LinearGradient>
+          </Touchable>
+        )}
+      />
+      {banners.length > 1 ? (
+        <View style={styles.dotsRow}>
+          {banners.map((b, i) => (
+            <View
+              key={b.key}
+              style={[styles.dot, { backgroundColor: i === activeIndex ? theme.primary : theme.border }]}
+            />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 function SectionTitle({ children }: { children: string }) {
   return (
     <Text variant="h1" weight="extrabold" style={{ marginBottom: spacing.sm }}>
@@ -346,4 +477,22 @@ const styles = StyleSheet.create({
   quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   quickIconImage: { width: 30, height: 30 },
   sectionHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  bannerCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 112,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+  },
+  bannerIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginLeft: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.18)",
+  },
+  dotsRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.sm, gap: 6 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
 });
