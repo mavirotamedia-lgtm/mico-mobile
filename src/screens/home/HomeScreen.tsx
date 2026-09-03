@@ -425,13 +425,13 @@ function PromoBannerCarousel({ banners, theme }: { banners: PromoBanner[]; theme
         <LinearGradient colors={theme.heroGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.promoCard}>
           <Animated.View style={[styles.promoRow, { opacity }]}>
             <View style={{ flex: 1 }}>
-              <Text variant="h2" weight="extrabold" color="onDark">
+              <Text variant="h1" weight="extrabold" color="onDark">
                 {banner.titleLine1}
               </Text>
-              <Text variant="h2" weight="extrabold" style={{ color: banner.accentColor }}>
+              <Text variant="h1" weight="extrabold" style={{ color: banner.accentColor }}>
                 {banner.titleLine2}
               </Text>
-              <Text variant="caption" color="onDark" style={{ marginTop: spacing.xs, opacity: 0.75 }}>
+              <Text variant="bodySmall" color="onDark" style={{ marginTop: spacing.xs, opacity: 0.75 }}>
                 {banner.subtitle}
               </Text>
             </View>
@@ -576,11 +576,11 @@ const styles = StyleSheet.create({
   promoCard: {
     borderRadius: radius.xl,
     padding: spacing.lg,
-    minHeight: 176,
+    minHeight: 240,
     justifyContent: "center",
   },
   promoRow: { flexDirection: "row", alignItems: "center" },
-  promoImageBox: { width: 130, height: 150, marginLeft: spacing.sm },
+  promoImageBox: { width: 190, height: 210, marginLeft: spacing.sm },
   promoImage: { width: "100%", height: "100%" },
   dotsRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.sm, gap: 6 },
   dot: { width: 6, height: 6, borderRadius: 3 },
