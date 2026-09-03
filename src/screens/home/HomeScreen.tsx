@@ -692,12 +692,7 @@ const styles = StyleSheet.create({
   heroPromoImageBox: {
     width: "100%",
     height: 210,
-    backgroundColor: "rgba(255,255,255,0.03)",
     marginTop: spacing.md,
-    borderRadius: radius.lg,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
   },
   heroPromoImage: { width: "100%", height: "100%" },
   dotsRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.md, gap: 6 },
