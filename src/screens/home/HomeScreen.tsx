@@ -68,30 +68,30 @@ const GOLD_GLOW = { colorA: "#C9A227", colorB: "#FCE9A8" };
 
 const HERO_IMAGE = {
   support: {
-    source: require("../../../assets/hero-icons/hero-support.jpg"),
-    aspect: 640 / 636,
+    source: require("../../../assets/hero-icons/hero-support.png"),
+    aspect: 780 / 697,
     // Siren isigi — mavi/kirmizi donen alarm isigi gibi yanip sonuyor.
-    glow: { relX: 0.81, relY: 0.75, relSize: 0.17, colorA: "#3D8BFF", colorB: "#FF4D4D" },
+    glow: { relX: 0.842, relY: 0.724, relSize: 0.2, colorA: "#3D8BFF", colorB: "#FF4D4D" },
   },
   craftsmen: {
-    source: require("../../../assets/hero-icons/hero-craftsmen.jpg"),
-    aspect: 300 / 265,
-    glow: { relX: 0.85, relY: 0.18, relSize: 0.22, ...GOLD_GLOW },
+    source: require("../../../assets/hero-icons/hero-craftsmen.png"),
+    aspect: 298 / 261,
+    glow: { relX: 0.857, relY: 0.163, relSize: 0.2, ...GOLD_GLOW },
   },
   boat: {
-    source: require("../../../assets/hero-icons/hero-boat.jpg"),
-    aspect: 640 / 452,
-    glow: { relX: 0.8, relY: 0.87, relSize: 0.15, ...GOLD_GLOW },
+    source: require("../../../assets/hero-icons/hero-boat.png"),
+    aspect: 900 / 652,
+    glow: { relX: 0.873, relY: 0.861, relSize: 0.16, ...GOLD_GLOW },
   },
   offers: {
-    source: require("../../../assets/hero-icons/hero-offers.jpg"),
-    aspect: 640 / 540,
-    glow: { relX: 0.9, relY: 0.74, relSize: 0.15, ...GOLD_GLOW },
+    source: require("../../../assets/hero-icons/hero-offers.png"),
+    aspect: 900 / 751,
+    glow: { relX: 0.906, relY: 0.744, relSize: 0.16, ...GOLD_GLOW },
   },
   calendar: {
-    source: require("../../../assets/hero-icons/hero-calendar.jpg"),
-    aspect: 640 / 582,
-    glow: { relX: 0.11, relY: 0.76, relSize: 0.16, ...GOLD_GLOW },
+    source: require("../../../assets/hero-icons/hero-calendar.png"),
+    aspect: 832 / 756,
+    glow: { relX: 0.077, relY: 0.792, relSize: 0.16, ...GOLD_GLOW },
   },
 } as const;
 
