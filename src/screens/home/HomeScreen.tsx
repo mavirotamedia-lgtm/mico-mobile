@@ -455,7 +455,7 @@ function HeroPromoCarousel({ banners, theme }: { banners: HeroBanner[]; theme: R
         setActiveIndex((i) => (i + 1) % banners.length);
         Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: true }).start();
       });
-    }, 4000);
+    }, 5000);
     return () => clearInterval(id);
   }, [banners.length, opacity]);
 
