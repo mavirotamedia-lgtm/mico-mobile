@@ -36,13 +36,17 @@ type QuickAction = {
   primary?: boolean;
 };
 
+type HeroVisual =
+  | { type: "image"; source: ImageSourcePropType }
+  | { type: "icon"; icon: keyof typeof Ionicons.glyphMap };
+
 type HeroBanner = {
   key: string;
   titleLine1: string;
   titleLine2: string;
   accentColor: string;
   subtitle: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  visual: HeroVisual;
   onPress: () => void;
 };
 
@@ -53,6 +57,14 @@ const QUICK_ACTION_ICON = {
   offers: require("../../../assets/home-icons/home-offers.png"),
   myBoat: require("../../../assets/home-icons/home-myboat.png"),
   profile: require("../../../assets/home-icons/home-profile.png"),
+} as const;
+
+const HERO_IMAGE = {
+  support: require("../../../assets/hero-icons/hero-support.jpg"),
+  craftsmen: require("../../../assets/hero-icons/hero-craftsmen.jpg"),
+  boat: require("../../../assets/hero-icons/hero-boat.jpg"),
+  offers: require("../../../assets/hero-icons/hero-offers.jpg"),
+  calendar: require("../../../assets/hero-icons/hero-calendar.jpg"),
 } as const;
 
 export function HomeScreen({ navigation }: Props) {
@@ -128,7 +140,7 @@ export function HomeScreen({ navigation }: Props) {
         titleLine2: "bakımı gecikti",
         accentColor: theme.danger,
         subtitle: `${boat.name} için ${Math.abs(diffDays)} gün önce planlanmıştı`,
-        icon: "alert-circle",
+        visual: { type: "icon", icon: "alert-circle" },
         onPress: () => navigation.navigate("BoatDetail", { boatId: boat.id }),
       });
     } else if (diffDays <= 30) {
@@ -138,7 +150,7 @@ export function HomeScreen({ navigation }: Props) {
         titleLine2: "yaklaşıyor",
         accentColor: theme.accent,
         subtitle: diffDays === 0 ? `${boat.name} için bugün planlandı` : `${boat.name} için ${diffDays} gün kaldı`,
-        icon: "time-outline",
+        visual: { type: "icon", icon: "time-outline" },
         onPress: () => navigation.navigate("BoatDetail", { boatId: boat.id }),
       });
     }
@@ -151,7 +163,7 @@ export function HomeScreen({ navigation }: Props) {
       titleLine2: "MİÇO yanında",
       accentColor: theme.accent,
       subtitle: "Denizde yalnız değilsin, ihtiyacın olduğunda doğru desteğe ulaş.",
-      icon: "chatbubbles-outline",
+      visual: { type: "image", source: HERO_IMAGE.support },
       onPress: () => navigation.navigate("CraftsmanList"),
     },
     {
@@ -160,7 +172,7 @@ export function HomeScreen({ navigation }: Props) {
       titleLine2: "kolayca bul",
       accentColor: theme.accent,
       subtitle: "Teknenle ilgili tüm işler için doğru ustalara hızlıca ulaş.",
-      icon: "search",
+      visual: { type: "image", source: HERO_IMAGE.craftsmen },
       onPress: () => navigation.navigate("CraftsmanList"),
     },
     {
@@ -169,7 +181,7 @@ export function HomeScreen({ navigation }: Props) {
       titleLine2: "yerde yönet",
       accentColor: theme.accent,
       subtitle: "Teknenle ilgili bilgileri tek bir yerde tut.",
-      icon: "boat-outline",
+      visual: { type: "image", source: HERO_IMAGE.boat },
       onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
     },
     {
@@ -178,7 +190,7 @@ export function HomeScreen({ navigation }: Props) {
       titleLine2: "karşılaştır",
       accentColor: theme.accent,
       subtitle: "Gelen teklifleri tek ekranda incele, ihtiyacına uygun ustayı seç.",
-      icon: "pricetags-outline",
+      visual: { type: "image", source: HERO_IMAGE.offers },
       onPress: () => navigation.navigate("ServiceRequests"),
     },
     {
@@ -187,7 +199,7 @@ export function HomeScreen({ navigation }: Props) {
       titleLine2: "oluştur",
       accentColor: theme.accent,
       subtitle: "Bakım tarihlerini unutma, teknenin ihtiyaçlarını tek yerden takip et.",
-      icon: "calendar-outline",
+      visual: { type: "image", source: HERO_IMAGE.calendar },
       onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
     },
   ];
@@ -435,6 +447,9 @@ function HeroPromoCarousel({ banners, theme }: { banners: HeroBanner[]; theme: R
 
   const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
   const rotate = pulse.interpolate({ inputRange: [0, 1], outputRange: ["-6deg", "6deg"] });
+  // Fotograf gorseller icin daha az belirgin, "nefes alan" bir zoom —
+  // ikon rozetiyle ayni surucu kullaniliyor, ekstra animasyon dongusu acmiyor.
+  const imageScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.045] });
 
   return (
     <View style={{ marginTop: spacing.lg }}>
@@ -451,17 +466,27 @@ function HeroPromoCarousel({ banners, theme }: { banners: HeroBanner[]; theme: R
               {banner.subtitle}
             </Text>
           </View>
-          <View style={styles.heroPromoVisual}>
-            <Text style={[styles.heroPromoWatermark, { color: banner.accentColor }]}>M</Text>
-            <Animated.View
-              style={[
-                styles.heroPromoRing,
-                { borderColor: banner.accentColor, transform: [{ scale }, { rotate }] },
-              ]}
-            >
-              <Ionicons name={banner.icon} size={38} color={theme.textOnDark} />
-            </Animated.View>
-          </View>
+          {banner.visual.type === "image" ? (
+            <View style={styles.heroPromoImageBox}>
+              <Animated.Image
+                source={banner.visual.source}
+                style={[styles.heroPromoImage, { transform: [{ scale: imageScale }] }]}
+                resizeMode="cover"
+              />
+            </View>
+          ) : (
+            <View style={styles.heroPromoVisual}>
+              <Text style={[styles.heroPromoWatermark, { color: banner.accentColor }]}>M</Text>
+              <Animated.View
+                style={[
+                  styles.heroPromoRing,
+                  { borderColor: banner.accentColor, transform: [{ scale }, { rotate }] },
+                ]}
+              >
+                <Ionicons name={banner.visual.icon} size={38} color={theme.textOnDark} />
+              </Animated.View>
+            </View>
+          )}
         </Animated.View>
       </Touchable>
       {banners.length > 1 ? (
@@ -529,7 +554,7 @@ const styles = StyleSheet.create({
   quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   quickIconImage: { width: 30, height: 30 },
   sectionHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  heroPromoRow: { flexDirection: "row", alignItems: "center", minHeight: 134 },
+  heroPromoRow: { flexDirection: "row", alignItems: "center", minHeight: 140 },
   heroPromoVisual: {
     width: 120,
     height: 120,
@@ -554,6 +579,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.08)",
   },
+  heroPromoImageBox: {
+    width: 132,
+    height: 138,
+    marginLeft: spacing.sm,
+    borderRadius: radius.lg,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+  },
+  heroPromoImage: { width: "100%", height: "100%" },
   dotsRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.md, gap: 6 },
   dot: { width: 6, height: 6, borderRadius: 3 },
 });
