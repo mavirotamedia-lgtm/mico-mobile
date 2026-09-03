@@ -36,8 +36,13 @@ type QuickAction = {
   primary?: boolean;
 };
 
+/** Gorseldeki tek bir objeyi (siren isigi, altin M rozeti vb.) isaret eden,
+ * kaynak gorsele gore oranli (0-1) konum/boyut — cihaz genisligi ne olursa
+ * olsun "contain" ile sigdirilmis resmin uzerine doğru hizada oturur. */
+type HeroGlowSpec = { relX: number; relY: number; relSize: number; colorA: string; colorB: string };
+
 type HeroVisual =
-  | { type: "image"; source: ImageSourcePropType }
+  | { type: "image"; source: ImageSourcePropType; aspect: number; glow?: HeroGlowSpec }
   | { type: "icon"; icon: keyof typeof Ionicons.glyphMap };
 
 type HeroBanner = {
@@ -59,12 +64,35 @@ const QUICK_ACTION_ICON = {
   profile: require("../../../assets/home-icons/home-profile.png"),
 } as const;
 
+const GOLD_GLOW = { colorA: "#C9A227", colorB: "#FCE9A8" };
+
 const HERO_IMAGE = {
-  support: require("../../../assets/hero-icons/hero-support.jpg"),
-  craftsmen: require("../../../assets/hero-icons/hero-craftsmen.jpg"),
-  boat: require("../../../assets/hero-icons/hero-boat.jpg"),
-  offers: require("../../../assets/hero-icons/hero-offers.jpg"),
-  calendar: require("../../../assets/hero-icons/hero-calendar.jpg"),
+  support: {
+    source: require("../../../assets/hero-icons/hero-support.jpg"),
+    aspect: 640 / 636,
+    // Siren isigi — mavi/kirmizi donen alarm isigi gibi yanip sonuyor.
+    glow: { relX: 0.81, relY: 0.75, relSize: 0.17, colorA: "#3D8BFF", colorB: "#FF4D4D" },
+  },
+  craftsmen: {
+    source: require("../../../assets/hero-icons/hero-craftsmen.jpg"),
+    aspect: 300 / 265,
+    glow: { relX: 0.85, relY: 0.18, relSize: 0.22, ...GOLD_GLOW },
+  },
+  boat: {
+    source: require("../../../assets/hero-icons/hero-boat.jpg"),
+    aspect: 640 / 452,
+    glow: { relX: 0.8, relY: 0.87, relSize: 0.15, ...GOLD_GLOW },
+  },
+  offers: {
+    source: require("../../../assets/hero-icons/hero-offers.jpg"),
+    aspect: 640 / 540,
+    glow: { relX: 0.9, relY: 0.74, relSize: 0.15, ...GOLD_GLOW },
+  },
+  calendar: {
+    source: require("../../../assets/hero-icons/hero-calendar.jpg"),
+    aspect: 640 / 582,
+    glow: { relX: 0.11, relY: 0.76, relSize: 0.16, ...GOLD_GLOW },
+  },
 } as const;
 
 export function HomeScreen({ navigation }: Props) {
@@ -163,7 +191,7 @@ export function HomeScreen({ navigation }: Props) {
       titleLine2: "MİÇO yanında",
       accentColor: theme.accent,
       subtitle: "Denizde yalnız değilsin, ihtiyacın olduğunda doğru desteğe ulaş.",
-      visual: { type: "image", source: HERO_IMAGE.support },
+      visual: { type: "image", ...HERO_IMAGE.support },
       onPress: () => navigation.navigate("CraftsmanList"),
     },
     {
@@ -172,7 +200,7 @@ export function HomeScreen({ navigation }: Props) {
       titleLine2: "kolayca bul",
       accentColor: theme.accent,
       subtitle: "Teknenle ilgili tüm işler için doğru ustalara hızlıca ulaş.",
-      visual: { type: "image", source: HERO_IMAGE.craftsmen },
+      visual: { type: "image", ...HERO_IMAGE.craftsmen },
       onPress: () => navigation.navigate("CraftsmanList"),
     },
     {
@@ -181,7 +209,7 @@ export function HomeScreen({ navigation }: Props) {
       titleLine2: "yerde yönet",
       accentColor: theme.accent,
       subtitle: "Teknenle ilgili bilgileri tek bir yerde tut.",
-      visual: { type: "image", source: HERO_IMAGE.boat },
+      visual: { type: "image", ...HERO_IMAGE.boat },
       onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
     },
     {
@@ -190,7 +218,7 @@ export function HomeScreen({ navigation }: Props) {
       titleLine2: "karşılaştır",
       accentColor: theme.accent,
       subtitle: "Gelen teklifleri tek ekranda incele, ihtiyacına uygun ustayı seç.",
-      visual: { type: "image", source: HERO_IMAGE.offers },
+      visual: { type: "image", ...HERO_IMAGE.offers },
       onPress: () => navigation.navigate("ServiceRequests"),
     },
     {
@@ -199,7 +227,7 @@ export function HomeScreen({ navigation }: Props) {
       titleLine2: "oluştur",
       accentColor: theme.accent,
       subtitle: "Bakım tarihlerini unutma, teknenin ihtiyaçlarını tek yerden takip et.",
-      visual: { type: "image", source: HERO_IMAGE.calendar },
+      visual: { type: "image", ...HERO_IMAGE.calendar },
       onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
     },
   ];
@@ -484,13 +512,12 @@ function HeroPromoCarousel({ banners, theme }: { banners: HeroBanner[]; theme: R
             ) : null}
           </View>
           {banner.visual.type === "image" ? (
-            <View style={styles.heroPromoImageBox}>
-              <Animated.Image
-                source={banner.visual.source}
-                style={[styles.heroPromoImage, { transform: [{ scale: imageScale }] }]}
-                resizeMode="contain"
-              />
-            </View>
+            <HeroImage
+              source={banner.visual.source}
+              aspect={banner.visual.aspect}
+              glow={banner.visual.glow}
+              imageScale={imageScale}
+            />
           ) : null}
         </Animated.View>
       </Touchable>
@@ -503,6 +530,84 @@ function HeroPromoCarousel({ banners, theme }: { banners: HeroBanner[]; theme: R
             />
           ))}
         </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** "contain" ile sigan gorselin, konteynir icindeki gercek dikdortgenini
+ * (offset + boyut) hesaplar — glow rozetini oranli konuma dogru oturtmak icin. */
+function containFit(containerW: number, containerH: number, sourceAspect: number) {
+  const containerAspect = containerW / containerH;
+  let w: number, h: number;
+  if (containerAspect > sourceAspect) {
+    h = containerH;
+    w = h * sourceAspect;
+  } else {
+    w = containerW;
+    h = w / sourceAspect;
+  }
+  return { w, h, offsetX: (containerW - w) / 2, offsetY: (containerH - h) / 2 };
+}
+
+/**
+ * Hero gorseli + istege bagli tek bir "glow" rozeti (siren isigi, altin M
+ * rozeti vb.) — obje bazinda tam ayirma yapmadan, gorselin uzerine dogru
+ * konuma oturan kucuk animasyonlu bir isik noktasi bindiriyoruz. Renk
+ * gecisi kucuk tek bir daire uzerinde oldugu icin native driver olmadan da
+ * (JS thread) sayfayi zorlamiyor.
+ */
+function HeroImage({
+  source,
+  aspect,
+  glow,
+  imageScale,
+}: {
+  source: ImageSourcePropType;
+  aspect: number;
+  glow?: HeroGlowSpec;
+  imageScale: Animated.AnimatedInterpolation<number>;
+}) {
+  const [containerSize, setContainerSize] = useState<{ w: number; h: number } | null>(null);
+  const colorPhase = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!glow) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(colorPhase, { toValue: 1, duration: 900, useNativeDriver: false }),
+        Animated.timing(colorPhase, { toValue: 0, duration: 900, useNativeDriver: false }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [glow, colorPhase]);
+
+  const fit = glow && containerSize ? containFit(containerSize.w, containerSize.h, aspect) : null;
+  const glowColor = glow ? colorPhase.interpolate({ inputRange: [0, 1], outputRange: [glow.colorA, glow.colorB] }) : undefined;
+  const glowSize = glow && fit ? glow.relSize * fit.w : 0;
+
+  return (
+    <View style={styles.heroPromoImageBox} onLayout={(e) => setContainerSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+      <Animated.Image source={source} style={[styles.heroPromoImage, { transform: [{ scale: imageScale }] }]} resizeMode="contain" />
+      {glow && fit ? (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: fit.offsetX + glow.relX * fit.w - glowSize / 2,
+            top: fit.offsetY + glow.relY * fit.h - glowSize / 2,
+            width: glowSize,
+            height: glowSize,
+            borderRadius: glowSize / 2,
+            backgroundColor: glowColor,
+            opacity: 0.6,
+            shadowColor: glow.colorA,
+            shadowOpacity: 0.9,
+            shadowRadius: glowSize * 0.6,
+            shadowOffset: { width: 0, height: 0 },
+          }}
+        />
       ) : null}
     </View>
   );
