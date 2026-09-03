@@ -146,6 +146,15 @@ export function HomeScreen({ navigation }: Props) {
 
   const featureBanners: HeroBanner[] = [
     {
+      key: "feature-support",
+      titleLine1: "İhtiyacın olduğunda",
+      titleLine2: "MİÇO yanında",
+      accentColor: theme.accent,
+      subtitle: "Denizde yalnız değilsin, ihtiyacın olduğunda doğru desteğe ulaş.",
+      icon: "chatbubbles-outline",
+      onPress: () => navigation.navigate("CraftsmanList"),
+    },
+    {
       key: "feature-craftsmen",
       titleLine1: "Doğru ustayı",
       titleLine2: "kolayca bul",
@@ -156,21 +165,30 @@ export function HomeScreen({ navigation }: Props) {
     },
     {
       key: "feature-guide",
-      titleLine1: "Bakım geçmişini",
-      titleLine2: "kolayca takip et",
+      titleLine1: "Tekneni tek",
+      titleLine2: "yerde yönet",
       accentColor: theme.accent,
-      subtitle: "Teknenin geçmiş ve gelecek bakımlarını tek yerden gör.",
-      icon: "book-outline",
+      subtitle: "Teknenle ilgili bilgileri tek bir yerde tut.",
+      icon: "boat-outline",
       onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
     },
     {
-      key: "feature-request",
-      titleLine1: "İhtiyacını anlat,",
-      titleLine2: "teklif al",
+      key: "feature-offers",
+      titleLine1: "Teklifleri",
+      titleLine2: "karşılaştır",
       accentColor: theme.accent,
-      subtitle: "Talebini oluştur, ustalar sana teklif göndersin.",
-      icon: "flash-outline",
-      onPress: () => navigation.navigate("CreateServiceRequest"),
+      subtitle: "Gelen teklifleri tek ekranda incele, ihtiyacına uygun ustayı seç.",
+      icon: "pricetags-outline",
+      onPress: () => navigation.navigate("ServiceRequests"),
+    },
+    {
+      key: "feature-calendar",
+      titleLine1: "Bakım takvimini",
+      titleLine2: "oluştur",
+      accentColor: theme.accent,
+      subtitle: "Bakım tarihlerini unutma, teknenin ihtiyaçlarını tek yerden takip et.",
+      icon: "calendar-outline",
+      onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
     },
   ];
 
@@ -415,8 +433,8 @@ function HeroPromoCarousel({ banners, theme }: { banners: HeroBanner[]; theme: R
   if (banners.length === 0) return null;
   const banner = banners[Math.min(activeIndex, banners.length - 1)];
 
-  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] });
-  const rotate = pulse.interpolate({ inputRange: [0, 1], outputRange: ["-5deg", "5deg"] });
+  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
+  const rotate = pulse.interpolate({ inputRange: [0, 1], outputRange: ["-6deg", "6deg"] });
 
   return (
     <View style={{ marginTop: spacing.lg }}>
@@ -441,7 +459,7 @@ function HeroPromoCarousel({ banners, theme }: { banners: HeroBanner[]; theme: R
                 { borderColor: banner.accentColor, transform: [{ scale }, { rotate }] },
               ]}
             >
-              <Ionicons name={banner.icon} size={34} color={theme.textOnDark} />
+              <Ionicons name={banner.icon} size={38} color={theme.textOnDark} />
             </Animated.View>
           </View>
         </Animated.View>
@@ -511,26 +529,26 @@ const styles = StyleSheet.create({
   quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   quickIconImage: { width: 30, height: 30 },
   sectionHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  heroPromoRow: { flexDirection: "row", alignItems: "center", minHeight: 128 },
+  heroPromoRow: { flexDirection: "row", alignItems: "center", minHeight: 134 },
   heroPromoVisual: {
-    width: 110,
-    height: 110,
+    width: 120,
+    height: 120,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: spacing.sm,
   },
   heroPromoWatermark: {
     position: "absolute",
-    right: -4,
-    top: -6,
-    fontSize: 56,
+    right: -6,
+    top: -8,
+    fontSize: 62,
     fontFamily: typography.fontFamily.extrabold,
     opacity: 0.35,
   },
   heroPromoRing: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+    width: 92,
+    height: 92,
+    borderRadius: 46,
     borderWidth: 3,
     alignItems: "center",
     justifyContent: "center",
