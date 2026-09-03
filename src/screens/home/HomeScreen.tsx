@@ -46,20 +46,18 @@ const QUICK_ACTION_ICON = {
 
 type PromoBanner = {
   key: string;
-  titleLine1: string;
-  titleLine2: string;
-  accentColor: string;
-  subtitle: string;
   source: ImageSourcePropType;
   onPress: () => void;
 };
 
+/** Basliklari, alt yaziyi ve gorseli tek parca iceren hazir banner kartlari. */
+const PROMO_BANNER_ASPECT = 1774 / 887;
+
 const PROMO_IMAGE = {
-  support: { source: require("../../../assets/promo-icons/promo-support.png") },
-  craftsmen: { source: require("../../../assets/promo-icons/promo-craftsmen.png") },
-  boat: { source: require("../../../assets/promo-icons/promo-boat.png") },
-  offers: { source: require("../../../assets/promo-icons/promo-offers.png") },
-  calendar: { source: require("../../../assets/promo-icons/promo-calendar.png") },
+  calendar: require("../../../assets/promo-icons/promo-calendar.png"),
+  support: require("../../../assets/promo-icons/promo-support.png"),
+  boat: require("../../../assets/promo-icons/promo-boat.png"),
+  offers: require("../../../assets/promo-icons/promo-offers.png"),
 } as const;
 
 export function HomeScreen({ navigation }: Props) {
@@ -120,47 +118,22 @@ export function HomeScreen({ navigation }: Props) {
   const promoBanners: PromoBanner[] = [
     {
       key: "promo-calendar",
-      titleLine1: "Bakım takvimini",
-      titleLine2: "oluştur",
-      accentColor: theme.accent,
-      subtitle: "Bakım tarihlerini unutma, tek yerden takip et.",
-      ...PROMO_IMAGE.calendar,
+      source: PROMO_IMAGE.calendar,
       onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
     },
     {
       key: "promo-support",
-      titleLine1: "İhtiyacın olduğunda",
-      titleLine2: "MİÇO yanında",
-      accentColor: theme.accent,
-      subtitle: "Denizde yalnız değilsin, doğru desteğe hızlıca ulaş.",
-      ...PROMO_IMAGE.support,
-      onPress: () => navigation.navigate("CraftsmanList"),
-    },
-    {
-      key: "promo-craftsmen",
-      titleLine1: "Doğru ustayı",
-      titleLine2: "kolayca bul",
-      accentColor: theme.accent,
-      subtitle: "Bölgendeki onaylı ustalara hızlıca ulaş.",
-      ...PROMO_IMAGE.craftsmen,
+      source: PROMO_IMAGE.support,
       onPress: () => navigation.navigate("CraftsmanList"),
     },
     {
       key: "promo-boat",
-      titleLine1: "Tekneni tek",
-      titleLine2: "yerde yönet",
-      accentColor: theme.accent,
-      subtitle: "Teknenle ilgili bilgileri tek bir yerde tut.",
-      ...PROMO_IMAGE.boat,
+      source: PROMO_IMAGE.boat,
       onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
     },
     {
       key: "promo-offers",
-      titleLine1: "Teklifleri",
-      titleLine2: "karşılaştır",
-      accentColor: theme.accent,
-      subtitle: "Gelen teklifleri incele, en uygun ustayı seç.",
-      ...PROMO_IMAGE.offers,
+      source: PROMO_IMAGE.offers,
       onPress: () => navigation.navigate("ServiceRequests"),
     },
   ];
@@ -418,20 +391,11 @@ function PromoBannerCarousel({ banners, theme }: { banners: PromoBanner[]; theme
         }}
         renderItem={({ item }) => (
           <Touchable onPress={item.onPress} haptic scaleTo={0.99} style={{ width: cardWidth }}>
-            <View style={styles.promoRow}>
-              <View style={{ flex: 1 }}>
-                <Text variant="h1" weight="extrabold" color="onDark">
-                  {item.titleLine1}
-                </Text>
-                <Text variant="h1" weight="extrabold" style={{ color: item.accentColor }}>
-                  {item.titleLine2}
-                </Text>
-                <Text variant="bodySmall" color="onDark" style={{ marginTop: spacing.xs, opacity: 0.75 }}>
-                  {item.subtitle}
-                </Text>
-              </View>
-              <PromoImage source={item.source} />
-            </View>
+            <Image
+              source={item.source}
+              style={{ width: cardWidth, height: cardWidth / PROMO_BANNER_ASPECT }}
+              resizeMode="contain"
+            />
           </Touchable>
         )}
       />
@@ -445,14 +409,6 @@ function PromoBannerCarousel({ banners, theme }: { banners: PromoBanner[]; theme
           ))}
         </View>
       ) : null}
-    </View>
-  );
-}
-
-function PromoImage({ source }: { source: ImageSourcePropType }) {
-  return (
-    <View style={styles.promoImageBox}>
-      <Image source={source} style={styles.promoImage} resizeMode="contain" />
     </View>
   );
 }
@@ -508,9 +464,6 @@ const styles = StyleSheet.create({
   quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   quickIconImage: { width: 30, height: 30 },
   sectionHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  promoRow: { flexDirection: "row", alignItems: "center", minHeight: 240 },
-  promoImageBox: { width: 225, height: 240, marginLeft: spacing.sm },
-  promoImage: { width: "100%", height: "100%" },
   dotsRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.sm, gap: 6 },
   dot: { width: 6, height: 6, borderRadius: 3 },
 });
