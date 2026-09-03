@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { ScrollView, View, Image, StyleSheet, RefreshControl } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ScrollView, View, Image, StyleSheet, RefreshControl, Animated, Easing } from "react-native";
 import type { ImageSourcePropType } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -42,6 +42,52 @@ const QUICK_ACTION_ICON = {
   offers: require("../../../assets/home-icons/home-offers.png"),
   myBoat: require("../../../assets/home-icons/home-myboat.png"),
   profile: require("../../../assets/home-icons/home-profile.png"),
+} as const;
+
+/** Gorseldeki tek bir objeyi (siren isigi, altin M rozeti vb.) isaret eden,
+ * kaynak gorsele gore oranli (0-1) konum/boyut. */
+type PromoGlowSpec = { relX: number; relY: number; relSize: number; colorA: string; colorB: string };
+
+type PromoBanner = {
+  key: string;
+  titleLine1: string;
+  titleLine2: string;
+  accentColor: string;
+  subtitle: string;
+  source: ImageSourcePropType;
+  aspect: number;
+  glow: PromoGlowSpec;
+  onPress: () => void;
+};
+
+const GOLD_GLOW = { colorA: "#C9A227", colorB: "#FCE9A8" };
+
+const PROMO_IMAGE = {
+  support: {
+    source: require("../../../assets/promo-icons/promo-support.png"),
+    aspect: 780 / 697,
+    glow: { relX: 0.842, relY: 0.724, relSize: 0.2, colorA: "#3D8BFF", colorB: "#FF4D4D" },
+  },
+  craftsmen: {
+    source: require("../../../assets/promo-icons/promo-craftsmen.png"),
+    aspect: 298 / 261,
+    glow: { relX: 0.857, relY: 0.163, relSize: 0.2, ...GOLD_GLOW },
+  },
+  boat: {
+    source: require("../../../assets/promo-icons/promo-boat.png"),
+    aspect: 900 / 652,
+    glow: { relX: 0.873, relY: 0.861, relSize: 0.16, ...GOLD_GLOW },
+  },
+  offers: {
+    source: require("../../../assets/promo-icons/promo-offers.png"),
+    aspect: 900 / 751,
+    glow: { relX: 0.906, relY: 0.744, relSize: 0.16, ...GOLD_GLOW },
+  },
+  calendar: {
+    source: require("../../../assets/promo-icons/promo-calendar.png"),
+    aspect: 832 / 756,
+    glow: { relX: 0.077, relY: 0.792, relSize: 0.16, ...GOLD_GLOW },
+  },
 } as const;
 
 export function HomeScreen({ navigation }: Props) {
@@ -97,6 +143,54 @@ export function HomeScreen({ navigation }: Props) {
     { key: "offers", icon: QUICK_ACTION_ICON.offers, label: "Tekliflerim", onPress: () => navigation.navigate("ServiceRequests") },
     { key: "myBoat", icon: QUICK_ACTION_ICON.myBoat, label: "Teknem", onPress: () => navigation.navigate("MyBoat") },
     { key: "profile", icon: QUICK_ACTION_ICON.profile, label: "Profilim", onPress: () => navigation.navigate("Profile") },
+  ];
+
+  const promoBanners: PromoBanner[] = [
+    {
+      key: "promo-support",
+      titleLine1: "İhtiyacın olduğunda",
+      titleLine2: "MİÇO yanında",
+      accentColor: theme.accent,
+      subtitle: "Denizde yalnız değilsin, doğru desteğe hızlıca ulaş.",
+      ...PROMO_IMAGE.support,
+      onPress: () => navigation.navigate("CraftsmanList"),
+    },
+    {
+      key: "promo-craftsmen",
+      titleLine1: "Doğru ustayı",
+      titleLine2: "kolayca bul",
+      accentColor: theme.accent,
+      subtitle: "Bölgendeki onaylı ustalara hızlıca ulaş.",
+      ...PROMO_IMAGE.craftsmen,
+      onPress: () => navigation.navigate("CraftsmanList"),
+    },
+    {
+      key: "promo-boat",
+      titleLine1: "Tekneni tek",
+      titleLine2: "yerde yönet",
+      accentColor: theme.accent,
+      subtitle: "Teknenle ilgili bilgileri tek bir yerde tut.",
+      ...PROMO_IMAGE.boat,
+      onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
+    },
+    {
+      key: "promo-offers",
+      titleLine1: "Teklifleri",
+      titleLine2: "karşılaştır",
+      accentColor: theme.accent,
+      subtitle: "Gelen teklifleri incele, en uygun ustayı seç.",
+      ...PROMO_IMAGE.offers,
+      onPress: () => navigation.navigate("ServiceRequests"),
+    },
+    {
+      key: "promo-calendar",
+      titleLine1: "Bakım takvimini",
+      titleLine2: "oluştur",
+      accentColor: theme.accent,
+      subtitle: "Bakım tarihlerini unutma, tek yerden takip et.",
+      ...PROMO_IMAGE.calendar,
+      onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
+    },
   ];
 
   if (isInitialLoading) {
@@ -207,6 +301,12 @@ export function HomeScreen({ navigation }: Props) {
         </LinearGradient>
 
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
+          <Reveal delay={50}>
+            <PromoBannerCarousel banners={promoBanners} theme={theme} />
+          </Reveal>
+        </View>
+
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
           <Reveal delay={70}>
             <SectionTitle>Hızlı İşlemler</SectionTitle>
             <View style={styles.quickGrid}>
@@ -295,6 +395,133 @@ export function HomeScreen({ navigation }: Props) {
   );
 }
 
+/**
+ * Yemeksepeti anasayfasindaki kampanya banner'ina benzer, kendi basina
+ * duran dikdortgen kart: sol tarafta baslik/alt yazi, sag tarafta
+ * animasyonlu illustrasyon. Elle kaydirilamiyor — 5 saniyede bir
+ * kendiliginden bir sonraki karta geciyor (crossfade).
+ */
+function PromoBannerCarousel({ banners, theme }: { banners: PromoBanner[]; theme: ReturnType<typeof useTheme>["theme"] }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const id = setInterval(() => {
+      Animated.timing(opacity, { toValue: 0, duration: 260, useNativeDriver: true }).start(() => {
+        setActiveIndex((i) => (i + 1) % banners.length);
+        Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: true }).start();
+      });
+    }, 5000);
+    return () => clearInterval(id);
+  }, [banners.length, opacity]);
+
+  if (banners.length === 0) return null;
+  const banner = banners[Math.min(activeIndex, banners.length - 1)];
+
+  return (
+    <View>
+      <Touchable onPress={banner.onPress} haptic scaleTo={0.99}>
+        <LinearGradient colors={theme.heroGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.promoCard}>
+          <Animated.View style={[styles.promoRow, { opacity }]}>
+            <View style={{ flex: 1 }}>
+              <Text variant="h2" weight="extrabold" color="onDark">
+                {banner.titleLine1}
+              </Text>
+              <Text variant="h2" weight="extrabold" style={{ color: banner.accentColor }}>
+                {banner.titleLine2}
+              </Text>
+              <Text variant="caption" color="onDark" style={{ marginTop: spacing.xs, opacity: 0.75 }}>
+                {banner.subtitle}
+              </Text>
+            </View>
+            <PromoImage source={banner.source} aspect={banner.aspect} glow={banner.glow} />
+          </Animated.View>
+        </LinearGradient>
+      </Touchable>
+      {banners.length > 1 ? (
+        <View style={styles.dotsRow}>
+          {banners.map((b, i) => (
+            <View key={b.key} style={[styles.dot, { backgroundColor: i === activeIndex ? theme.primary : theme.border }]} />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** "contain" ile sigan gorselin, konteynir icindeki gercek dikdortgenini hesaplar. */
+function containFit(containerW: number, containerH: number, sourceAspect: number) {
+  const containerAspect = containerW / containerH;
+  let w: number, h: number;
+  if (containerAspect > sourceAspect) {
+    h = containerH;
+    w = h * sourceAspect;
+  } else {
+    w = containerW;
+    h = w / sourceAspect;
+  }
+  return { w, h, offsetX: (containerW - w) / 2, offsetY: (containerH - h) / 2 };
+}
+
+/** Gorsel + hafif nefes alan zoom + tek bir odak noktasinda animasyonlu isik rozeti. */
+function PromoImage({ source, aspect, glow }: { source: ImageSourcePropType; aspect: number; glow: PromoGlowSpec }) {
+  const [containerSize, setContainerSize] = useState<{ w: number; h: number } | null>(null);
+  const pulse = useRef(new Animated.Value(0)).current;
+  const colorPhase = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const zoomLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    const colorLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(colorPhase, { toValue: 1, duration: 900, useNativeDriver: false }),
+        Animated.timing(colorPhase, { toValue: 0, duration: 900, useNativeDriver: false }),
+      ])
+    );
+    zoomLoop.start();
+    colorLoop.start();
+    return () => {
+      zoomLoop.stop();
+      colorLoop.stop();
+    };
+  }, [pulse, colorPhase]);
+
+  const imageScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] });
+  const glowColor = colorPhase.interpolate({ inputRange: [0, 1], outputRange: [glow.colorA, glow.colorB] });
+  const fit = containerSize ? containFit(containerSize.w, containerSize.h, aspect) : null;
+  const glowSize = fit ? glow.relSize * fit.w : 0;
+
+  return (
+    <View style={styles.promoImageBox} onLayout={(e) => setContainerSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+      <Animated.Image source={source} style={[styles.promoImage, { transform: [{ scale: imageScale }] }]} resizeMode="contain" />
+      {fit ? (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: fit.offsetX + glow.relX * fit.w - glowSize / 2,
+            top: fit.offsetY + glow.relY * fit.h - glowSize / 2,
+            width: glowSize,
+            height: glowSize,
+            borderRadius: glowSize / 2,
+            backgroundColor: glowColor,
+            opacity: 0.6,
+            shadowColor: glow.colorA,
+            shadowOpacity: 0.9,
+            shadowRadius: glowSize * 0.6,
+            shadowOffset: { width: 0, height: 0 },
+          }}
+        />
+      ) : null}
+    </View>
+  );
+}
+
 function SectionTitle({ children }: { children: string }) {
   return (
     <Text variant="h1" weight="extrabold" style={{ marginBottom: spacing.sm }}>
@@ -346,4 +573,15 @@ const styles = StyleSheet.create({
   quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   quickIconImage: { width: 30, height: 30 },
   sectionHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  promoCard: {
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    minHeight: 176,
+    justifyContent: "center",
+  },
+  promoRow: { flexDirection: "row", alignItems: "center" },
+  promoImageBox: { width: 130, height: 150, marginLeft: spacing.sm },
+  promoImage: { width: "100%", height: "100%" },
+  dotsRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.sm, gap: 6 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
 });
