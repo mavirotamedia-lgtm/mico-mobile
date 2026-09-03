@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, View, Image, StyleSheet, RefreshControl, Animated, Easing } from "react-native";
+import { ScrollView, FlatList, View, Image, StyleSheet, RefreshControl, Animated, Easing, useWindowDimensions } from "react-native";
 import type { ImageSourcePropType } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -309,13 +309,11 @@ export function HomeScreen({ navigation }: Props) {
               </Card>
             )}
           </Reveal>
-        </LinearGradient>
 
-        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
           <Reveal delay={50}>
             <PromoBannerCarousel banners={promoBanners} theme={theme} />
           </Reveal>
-        </View>
+        </LinearGradient>
 
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
           <Reveal delay={70}>
@@ -407,53 +405,82 @@ export function HomeScreen({ navigation }: Props) {
 }
 
 /**
- * Yemeksepeti anasayfasindaki kampanya banner'ina benzer, kendi basina
- * duran dikdortgen kart: sol tarafta baslik/alt yazi, sag tarafta
- * animasyonlu illustrasyon. Elle kaydirilamiyor — 5 saniyede bir
- * kendiliginden bir sonraki karta geciyor (crossfade).
+ * Teknem kartinin hemen altinda, hero'nun lacivert zeminiyle kaynasik
+ * (ayri bir kart/kutu degil) 5 kartlik tanitim serisi. Hem elle
+ * kaydirilabiliyor (yatay FlatList, pagingEnabled) hem de 5 saniyede
+ * bir kendiliginden bir sonraki karta geciyor — elle kaydirma sirasinda
+ * otomatik gecis sayaci sifirlanir.
  */
 function PromoBannerCarousel({ banners, theme }: { banners: PromoBanner[]; theme: ReturnType<typeof useTheme>["theme"] }) {
+  const { width } = useWindowDimensions();
+  const cardWidth = width - spacing.lg * 2;
   const [activeIndex, setActiveIndex] = useState(0);
-  const opacity = useRef(new Animated.Value(1)).current;
+  const indexRef = useRef(0);
+  const listRef = useRef<FlatList<PromoBanner>>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startAutoplay = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (banners.length <= 1) return;
+    intervalRef.current = setInterval(() => {
+      const next = (indexRef.current + 1) % banners.length;
+      listRef.current?.scrollToIndex({ index: next, animated: true });
+    }, 5000);
+  }, [banners.length]);
 
   useEffect(() => {
-    if (banners.length <= 1) return;
-    const id = setInterval(() => {
-      Animated.timing(opacity, { toValue: 0, duration: 260, useNativeDriver: true }).start(() => {
-        setActiveIndex((i) => (i + 1) % banners.length);
-        Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: true }).start();
-      });
-    }, 5000);
-    return () => clearInterval(id);
-  }, [banners.length, opacity]);
+    startAutoplay();
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [startAutoplay]);
 
   if (banners.length === 0) return null;
-  const banner = banners[Math.min(activeIndex, banners.length - 1)];
 
   return (
-    <View>
-      <Touchable onPress={banner.onPress} haptic scaleTo={0.99}>
-        <LinearGradient colors={theme.heroGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.promoCard}>
-          <Animated.View style={[styles.promoRow, { opacity }]}>
-            <View style={{ flex: 1 }}>
-              <Text variant="h1" weight="extrabold" color="onDark">
-                {banner.titleLine1}
-              </Text>
-              <Text variant="h1" weight="extrabold" style={{ color: banner.accentColor }}>
-                {banner.titleLine2}
-              </Text>
-              <Text variant="bodySmall" color="onDark" style={{ marginTop: spacing.xs, opacity: 0.75 }}>
-                {banner.subtitle}
-              </Text>
+    <View style={{ marginTop: spacing.lg }}>
+      <FlatList
+        ref={listRef}
+        data={banners}
+        keyExtractor={(b) => b.key}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        decelerationRate="fast"
+        getItemLayout={(_, index) => ({ length: cardWidth, offset: cardWidth * index, index })}
+        onMomentumScrollEnd={(e) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.x / cardWidth);
+          const clamped = Math.max(0, Math.min(idx, banners.length - 1));
+          setActiveIndex(clamped);
+          indexRef.current = clamped;
+          startAutoplay();
+        }}
+        renderItem={({ item }) => (
+          <Touchable onPress={item.onPress} haptic scaleTo={0.99} style={{ width: cardWidth }}>
+            <View style={styles.promoRow}>
+              <View style={{ flex: 1 }}>
+                <Text variant="h1" weight="extrabold" color="onDark">
+                  {item.titleLine1}
+                </Text>
+                <Text variant="h1" weight="extrabold" style={{ color: item.accentColor }}>
+                  {item.titleLine2}
+                </Text>
+                <Text variant="bodySmall" color="onDark" style={{ marginTop: spacing.xs, opacity: 0.75 }}>
+                  {item.subtitle}
+                </Text>
+              </View>
+              <PromoImage source={item.source} aspect={item.aspect} glow={item.glow} checklist={item.checklist} />
             </View>
-            <PromoImage source={banner.source} aspect={banner.aspect} glow={banner.glow} checklist={banner.checklist} />
-          </Animated.View>
-        </LinearGradient>
-      </Touchable>
+          </Touchable>
+        )}
+      />
       {banners.length > 1 ? (
         <View style={styles.dotsRow}>
           {banners.map((b, i) => (
-            <View key={b.key} style={[styles.dot, { backgroundColor: i === activeIndex ? theme.primary : theme.border }]} />
+            <View
+              key={b.key}
+              style={[styles.dot, { backgroundColor: i === activeIndex ? theme.accent : "rgba(255,255,255,0.3)" }]}
+            />
           ))}
         </View>
       ) : null}
@@ -656,13 +683,7 @@ const styles = StyleSheet.create({
   quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   quickIconImage: { width: 30, height: 30 },
   sectionHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  promoCard: {
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    minHeight: 240,
-    justifyContent: "center",
-  },
-  promoRow: { flexDirection: "row", alignItems: "center" },
+  promoRow: { flexDirection: "row", alignItems: "center", minHeight: 210 },
   promoImageBox: { width: 190, height: 210, marginLeft: spacing.sm },
   promoImage: { width: "100%", height: "100%" },
   dotsRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.sm, gap: 6 },
