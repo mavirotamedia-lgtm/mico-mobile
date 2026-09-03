@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { ScrollView, FlatList, View, Image, StyleSheet, RefreshControl, useWindowDimensions } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ScrollView, View, Image, StyleSheet, RefreshControl, Animated, Easing } from "react-native";
 import type { ImageSourcePropType } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,7 +10,7 @@ import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
-import { spacing, radius, palette } from "@/theme/tokens";
+import { spacing, radius, typography } from "@/theme/tokens";
 import { Text, Card, Rating, Badge, Avatar, BoatVisual, ScreenContainer, Touchable, Reveal, Skeleton, useToast } from "@/components/ui";
 import * as boatsApi from "@/api/boats";
 import * as craftsmenApi from "@/api/craftsmen";
@@ -36,12 +36,13 @@ type QuickAction = {
   primary?: boolean;
 };
 
-type HomeBanner = {
+type HeroBanner = {
   key: string;
-  title: string;
+  titleLine1: string;
+  titleLine2: string;
+  accentColor: string;
   subtitle: string;
   icon: keyof typeof Ionicons.glyphMap;
-  colors: readonly [string, string];
   onPress: () => void;
 };
 
@@ -114,7 +115,7 @@ export function HomeScreen({ navigation }: Props) {
 
   // Bakim rehberindeki en yakin planli tarihe gore kisisellestirilmis
   // hatirlatma banner'i — sadece gecikmis veya 30 gun icinde olan varsa gosterilir.
-  const reminderBanners: HomeBanner[] = [];
+  const reminderBanners: HeroBanner[] = [];
   const nextDue = maintenanceRecords
     .filter((r) => r.nextDueDate)
     .sort((a, b) => new Date(a.nextDueDate as string).getTime() - new Date(b.nextDueDate as string).getTime())[0];
@@ -123,52 +124,57 @@ export function HomeScreen({ navigation }: Props) {
     if (diffDays < 0) {
       reminderBanners.push({
         key: "maint-overdue",
-        title: `${nextDue.title} bakımı gecikti`,
+        titleLine1: `${nextDue.title}`,
+        titleLine2: "bakımı gecikti",
+        accentColor: theme.danger,
         subtitle: `${boat.name} için ${Math.abs(diffDays)} gün önce planlanmıştı`,
         icon: "alert-circle",
-        colors: [palette.danger500, palette.navy900],
         onPress: () => navigation.navigate("BoatDetail", { boatId: boat.id }),
       });
     } else if (diffDays <= 30) {
       reminderBanners.push({
         key: "maint-upcoming",
-        title: `${nextDue.title} zamanı yaklaşıyor`,
+        titleLine1: `${nextDue.title} zamanı`,
+        titleLine2: "yaklaşıyor",
+        accentColor: theme.accent,
         subtitle: diffDays === 0 ? `${boat.name} için bugün planlandı` : `${boat.name} için ${diffDays} gün kaldı`,
         icon: "time-outline",
-        colors: [palette.gold500, palette.navy800],
         onPress: () => navigation.navigate("BoatDetail", { boatId: boat.id }),
       });
     }
   }
 
-  const featureBanners: HomeBanner[] = [
-    {
-      key: "feature-guide",
-      title: "Bakım Rehberini Keşfet",
-      subtitle: "Teknenin geçmişini ve gelecek bakımlarını tek yerden takip et",
-      icon: "book-outline",
-      colors: [palette.navy600, palette.navy950],
-      onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
-    },
+  const featureBanners: HeroBanner[] = [
     {
       key: "feature-craftsmen",
-      title: "Güvenilir Ustalarla Tanış",
-      subtitle: "Bölgendeki onaylı ustaları incele, en uygun teklifi seç",
-      icon: "construct-outline",
-      colors: [palette.navy700, palette.navy950],
+      titleLine1: "Doğru ustayı",
+      titleLine2: "kolayca bul",
+      accentColor: theme.accent,
+      subtitle: "Teknenle ilgili tüm işler için doğru ustalara hızlıca ulaş.",
+      icon: "search",
       onPress: () => navigation.navigate("CraftsmanList"),
     },
     {
+      key: "feature-guide",
+      titleLine1: "Bakım geçmişini",
+      titleLine2: "kolayca takip et",
+      accentColor: theme.accent,
+      subtitle: "Teknenin geçmiş ve gelecek bakımlarını tek yerden gör.",
+      icon: "book-outline",
+      onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
+    },
+    {
       key: "feature-request",
-      title: "Hızlı Talep Oluştur",
-      subtitle: "İhtiyacını anlat, ustalar sana teklif göndersin",
+      titleLine1: "İhtiyacını anlat,",
+      titleLine2: "teklif al",
+      accentColor: theme.accent,
+      subtitle: "Talebini oluştur, ustalar sana teklif göndersin.",
       icon: "flash-outline",
-      colors: [palette.navy600, palette.navy800],
       onPress: () => navigation.navigate("CreateServiceRequest"),
     },
   ];
 
-  const banners: HomeBanner[] = [...reminderBanners, ...featureBanners];
+  const heroBanners: HeroBanner[] = [...reminderBanners, ...featureBanners];
 
   if (isInitialLoading) {
     return (
@@ -184,11 +190,10 @@ export function HomeScreen({ navigation }: Props) {
             <View style={styles.bellButton} />
           </View>
           <Skeleton width="100%" height={96} radius={radius.xl} style={{ marginTop: spacing.lg, backgroundColor: "rgba(255,255,255,0.10)" }} />
+          <Skeleton width="100%" height={120} radius={radius.lg} style={{ marginTop: spacing.lg, backgroundColor: "rgba(255,255,255,0.08)" }} />
         </LinearGradient>
 
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
-          <Skeleton width="100%" height={112} radius={radius.xl} style={{ marginBottom: spacing.lg }} />
-
           <Skeleton width={140} height={20} style={{ marginBottom: spacing.sm }} />
           <View style={styles.quickGrid}>
             {Array.from({ length: 6 }).map((_, i) => (
@@ -277,13 +282,11 @@ export function HomeScreen({ navigation }: Props) {
               </Card>
             )}
           </Reveal>
-        </LinearGradient>
 
-        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
           <Reveal delay={40}>
-            <BannerCarousel banners={banners} theme={theme} />
+            <HeroPromoCarousel banners={heroBanners} theme={theme} />
           </Reveal>
-        </View>
+        </LinearGradient>
 
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
           <Reveal delay={70}>
@@ -374,50 +377,81 @@ export function HomeScreen({ navigation }: Props) {
   );
 }
 
-function BannerCarousel({ banners, theme }: { banners: HomeBanner[]; theme: ReturnType<typeof useTheme>["theme"] }) {
-  const { width } = useWindowDimensions();
+/**
+ * Kahraman alanina gomulu, KENDI KENDINE ilerleyen tanitim serisi.
+ * Bilerek elle kaydirilamiyor (istek: "el ile kaydirilmasin, kendi kendine
+ * saga kaysin") — FlatList/ScrollView yerine 3.5sn'de bir crossfade ile
+ * icerik degistiriliyor. Rozetteki buyutec/ikon animasyonu native driver
+ * kullanan hafif bir "nefes alma" + hafif sallanma efekti; sayfayi
+ * kasmamasi icin renk degismiyor, donme/carpici bir hareket yok.
+ */
+function HeroPromoCarousel({ banners, theme }: { banners: HeroBanner[]; theme: ReturnType<typeof useTheme>["theme"] }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const cardWidth = width - spacing.lg * 2;
+  const opacity = useRef(new Animated.Value(1)).current;
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const id = setInterval(() => {
+      Animated.timing(opacity, { toValue: 0, duration: 260, useNativeDriver: true }).start(() => {
+        setActiveIndex((i) => (i + 1) % banners.length);
+        Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: true }).start();
+      });
+    }, 4000);
+    return () => clearInterval(id);
+  }, [banners.length, opacity]);
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
 
   if (banners.length === 0) return null;
+  const banner = banners[Math.min(activeIndex, banners.length - 1)];
+
+  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] });
+  const rotate = pulse.interpolate({ inputRange: [0, 1], outputRange: ["-5deg", "5deg"] });
 
   return (
-    <View>
-      <FlatList
-        data={banners}
-        keyExtractor={(b) => b.key}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        decelerationRate="fast"
-        onMomentumScrollEnd={(e) => {
-          const idx = Math.round(e.nativeEvent.contentOffset.x / cardWidth);
-          setActiveIndex(Math.max(0, Math.min(idx, banners.length - 1)));
-        }}
-        renderItem={({ item }) => (
-          <Touchable onPress={item.onPress} haptic scaleTo={0.98} style={{ width: cardWidth }}>
-            <LinearGradient colors={item.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.bannerCard}>
-              <View style={{ flex: 1 }}>
-                <Text variant="h2" weight="extrabold" color="onDark">
-                  {item.title}
-                </Text>
-                <Text variant="bodySmall" color="onDark" style={{ marginTop: 4, opacity: 0.85 }}>
-                  {item.subtitle}
-                </Text>
-              </View>
-              <View style={styles.bannerIconWrap}>
-                <Ionicons name={item.icon} size={26} color={theme.textOnDark} />
-              </View>
-            </LinearGradient>
-          </Touchable>
-        )}
-      />
+    <View style={{ marginTop: spacing.lg }}>
+      <Touchable onPress={banner.onPress} haptic scaleTo={0.99}>
+        <Animated.View style={[styles.heroPromoRow, { opacity }]}>
+          <View style={{ flex: 1 }}>
+            <Text variant="h1" weight="extrabold" color="onDark">
+              {banner.titleLine1}
+            </Text>
+            <Text variant="h1" weight="extrabold" style={{ color: banner.accentColor }}>
+              {banner.titleLine2}
+            </Text>
+            <Text variant="bodySmall" color="onDark" style={{ marginTop: spacing.xs, opacity: 0.75 }}>
+              {banner.subtitle}
+            </Text>
+          </View>
+          <View style={styles.heroPromoVisual}>
+            <Text style={[styles.heroPromoWatermark, { color: banner.accentColor }]}>M</Text>
+            <Animated.View
+              style={[
+                styles.heroPromoRing,
+                { borderColor: banner.accentColor, transform: [{ scale }, { rotate }] },
+              ]}
+            >
+              <Ionicons name={banner.icon} size={34} color={theme.textOnDark} />
+            </Animated.View>
+          </View>
+        </Animated.View>
+      </Touchable>
       {banners.length > 1 ? (
         <View style={styles.dotsRow}>
           {banners.map((b, i) => (
             <View
               key={b.key}
-              style={[styles.dot, { backgroundColor: i === activeIndex ? theme.primary : theme.border }]}
+              style={[styles.dot, { backgroundColor: i === activeIndex ? theme.accent : "rgba(255,255,255,0.3)" }]}
             />
           ))}
         </View>
@@ -477,22 +511,31 @@ const styles = StyleSheet.create({
   quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   quickIconImage: { width: 30, height: 30 },
   sectionHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  bannerCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 112,
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-  },
-  bannerIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginLeft: spacing.sm,
+  heroPromoRow: { flexDirection: "row", alignItems: "center", minHeight: 128 },
+  heroPromoVisual: {
+    width: 110,
+    height: 110,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.18)",
+    marginLeft: spacing.sm,
   },
-  dotsRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.sm, gap: 6 },
+  heroPromoWatermark: {
+    position: "absolute",
+    right: -4,
+    top: -6,
+    fontSize: 56,
+    fontFamily: typography.fontFamily.extrabold,
+    opacity: 0.35,
+  },
+  heroPromoRing: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    borderWidth: 3,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  dotsRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.md, gap: 6 },
   dot: { width: 6, height: 6, borderRadius: 3 },
 });
