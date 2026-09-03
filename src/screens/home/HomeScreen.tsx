@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, FlatList, View, Image, StyleSheet, RefreshControl, Animated, Easing, useWindowDimensions } from "react-native";
+import { ScrollView, FlatList, View, Image, StyleSheet, RefreshControl, useWindowDimensions } from "react-native";
 import type { ImageSourcePropType } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -44,13 +44,6 @@ const QUICK_ACTION_ICON = {
   profile: require("../../../assets/home-icons/home-profile.png"),
 } as const;
 
-/** Gorseldeki tek bir objeyi (siren isigi, altin M rozeti vb.) isaret eden,
- * kaynak gorsele gore oranli (0-1) konum/boyut. */
-type PromoGlowSpec = { relX: number; relY: number; relSize: number; colorA: string; colorB: string };
-
-/** Bos takvim hucrelerine sirayla "isaretlenen" yesil tik noktalari. */
-type PromoChecklistSpec = { relX: number; relY: number; relSize: number };
-
 type PromoBanner = {
   key: string;
   titleLine1: string;
@@ -58,47 +51,15 @@ type PromoBanner = {
   accentColor: string;
   subtitle: string;
   source: ImageSourcePropType;
-  aspect: number;
-  glow: PromoGlowSpec;
-  checklist?: readonly PromoChecklistSpec[];
   onPress: () => void;
 };
 
-const GOLD_GLOW = { colorA: "#C9A227", colorB: "#FCE9A8" };
-
 const PROMO_IMAGE = {
-  support: {
-    source: require("../../../assets/promo-icons/promo-support.png"),
-    aspect: 780 / 697,
-    glow: { relX: 0.842, relY: 0.724, relSize: 0.2, colorA: "#3D8BFF", colorB: "#FF4D4D" },
-  },
-  craftsmen: {
-    source: require("../../../assets/promo-icons/promo-craftsmen.png"),
-    aspect: 298 / 261,
-    glow: { relX: 0.857, relY: 0.163, relSize: 0.2, ...GOLD_GLOW },
-  },
-  boat: {
-    source: require("../../../assets/promo-icons/promo-boat.png"),
-    aspect: 900 / 652,
-    glow: { relX: 0.873, relY: 0.861, relSize: 0.16, ...GOLD_GLOW },
-  },
-  offers: {
-    source: require("../../../assets/promo-icons/promo-offers.png"),
-    aspect: 900 / 751,
-    glow: { relX: 0.906, relY: 0.744, relSize: 0.16, ...GOLD_GLOW },
-  },
-  calendar: {
-    source: require("../../../assets/promo-icons/promo-calendar.png"),
-    aspect: 900 / 647,
-    glow: { relX: 0.115, relY: 0.71, relSize: 0.18, ...GOLD_GLOW },
-    // Takvimin ust sirasindaki 3 bos hucreye sirayla "isleniyor" gibi
-    // beliren yesil tikler.
-    checklist: [
-      { relX: 0.201, relY: 0.339, relSize: 0.06 },
-      { relX: 0.314, relY: 0.339, relSize: 0.06 },
-      { relX: 0.54, relY: 0.339, relSize: 0.06 },
-    ],
-  },
+  support: { source: require("../../../assets/promo-icons/promo-support.png") },
+  craftsmen: { source: require("../../../assets/promo-icons/promo-craftsmen.png") },
+  boat: { source: require("../../../assets/promo-icons/promo-boat.png") },
+  offers: { source: require("../../../assets/promo-icons/promo-offers.png") },
+  calendar: { source: require("../../../assets/promo-icons/promo-calendar.png") },
 } as const;
 
 export function HomeScreen({ navigation }: Props) {
@@ -469,7 +430,7 @@ function PromoBannerCarousel({ banners, theme }: { banners: PromoBanner[]; theme
                   {item.subtitle}
                 </Text>
               </View>
-              <PromoImage source={item.source} aspect={item.aspect} glow={item.glow} checklist={item.checklist} />
+              <PromoImage source={item.source} />
             </View>
           </Touchable>
         )}
@@ -488,146 +449,10 @@ function PromoBannerCarousel({ banners, theme }: { banners: PromoBanner[]; theme
   );
 }
 
-/** "contain" ile sigan gorselin, konteynir icindeki gercek dikdortgenini hesaplar. */
-function containFit(containerW: number, containerH: number, sourceAspect: number) {
-  const containerAspect = containerW / containerH;
-  let w: number, h: number;
-  if (containerAspect > sourceAspect) {
-    h = containerH;
-    w = h * sourceAspect;
-  } else {
-    w = containerW;
-    h = w / sourceAspect;
-  }
-  return { w, h, offsetX: (containerW - w) / 2, offsetY: (containerH - h) / 2 };
-}
-
-/** Gorsel + hafif nefes alan zoom + tek bir odak noktasinda animasyonlu isik rozeti. */
-const CHECKLIST_GREEN = "#1FA669";
-
-function PromoImage({
-  source,
-  aspect,
-  glow,
-  checklist,
-}: {
-  source: ImageSourcePropType;
-  aspect: number;
-  glow: PromoGlowSpec;
-  checklist?: readonly PromoChecklistSpec[];
-}) {
-  const [containerSize, setContainerSize] = useState<{ w: number; h: number } | null>(null);
-  const pulse = useRef(new Animated.Value(0)).current;
-  const colorPhase = useRef(new Animated.Value(0)).current;
-  const checklistAnims = useRef((checklist ?? []).map(() => new Animated.Value(0))).current;
-
-  useEffect(() => {
-    const zoomLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
-    );
-    const colorLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(colorPhase, { toValue: 1, duration: 900, useNativeDriver: false }),
-        Animated.timing(colorPhase, { toValue: 0, duration: 900, useNativeDriver: false }),
-      ])
-    );
-    zoomLoop.start();
-    colorLoop.start();
-    return () => {
-      zoomLoop.stop();
-      colorLoop.stop();
-    };
-  }, [pulse, colorPhase]);
-
-  // Bos takvim hucrelerine sirayla "isleniyor" gibi beliren yesil tikler:
-  // bir bir pop-in, bir sure ekranda kal, birlikte sonup basa dön.
-  useEffect(() => {
-    if (checklistAnims.length === 0) return;
-    let cancelled = false;
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    const cycle = () => {
-      if (cancelled) return;
-      checklistAnims.forEach((v) => v.setValue(0));
-      Animated.stagger(
-        420,
-        checklistAnims.map((v) => Animated.spring(v, { toValue: 1, friction: 5, tension: 60, useNativeDriver: true }))
-      ).start(() => {
-        if (cancelled) return;
-        timeoutId = setTimeout(() => {
-          if (cancelled) return;
-          Animated.parallel(checklistAnims.map((v) => Animated.timing(v, { toValue: 0, duration: 300, useNativeDriver: true }))).start(() => {
-            if (cancelled) return;
-            timeoutId = setTimeout(cycle, 500);
-          });
-        }, 1600);
-      });
-    };
-
-    cycle();
-    return () => {
-      cancelled = true;
-      clearTimeout(timeoutId);
-    };
-  }, [checklistAnims]);
-
-  const imageScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] });
-  const glowColor = colorPhase.interpolate({ inputRange: [0, 1], outputRange: [glow.colorA, glow.colorB] });
-  const fit = containerSize ? containFit(containerSize.w, containerSize.h, aspect) : null;
-  const glowSize = fit ? glow.relSize * fit.w : 0;
-
+function PromoImage({ source }: { source: ImageSourcePropType }) {
   return (
-    <View style={styles.promoImageBox} onLayout={(e) => setContainerSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
-      <Animated.Image source={source} style={[styles.promoImage, { transform: [{ scale: imageScale }] }]} resizeMode="contain" />
-      {fit ? (
-        <Animated.View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            left: fit.offsetX + glow.relX * fit.w - glowSize / 2,
-            top: fit.offsetY + glow.relY * fit.h - glowSize / 2,
-            width: glowSize,
-            height: glowSize,
-            borderRadius: glowSize / 2,
-            backgroundColor: glowColor,
-            opacity: 0.6,
-            shadowColor: glow.colorA,
-            shadowOpacity: 0.9,
-            shadowRadius: glowSize * 0.6,
-            shadowOffset: { width: 0, height: 0 },
-          }}
-        />
-      ) : null}
-      {fit
-        ? checklist?.map((c, i) => {
-            const size = c.relSize * fit.w;
-            const v = checklistAnims[i];
-            return (
-              <Animated.View
-                key={i}
-                pointerEvents="none"
-                style={{
-                  position: "absolute",
-                  left: fit.offsetX + c.relX * fit.w - size / 2,
-                  top: fit.offsetY + c.relY * fit.h - size / 2,
-                  width: size,
-                  height: size,
-                  borderRadius: size / 2,
-                  backgroundColor: CHECKLIST_GREEN,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: v,
-                  transform: [{ scale: v }],
-                }}
-              >
-                <Ionicons name="checkmark" size={size * 0.62} color="#FFFFFF" />
-              </Animated.View>
-            );
-          })
-        : null}
+    <View style={styles.promoImageBox}>
+      <Image source={source} style={styles.promoImage} resizeMode="contain" />
     </View>
   );
 }
