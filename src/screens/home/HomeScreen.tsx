@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, View, Image, StyleSheet, RefreshControl, Animated, Easing } from "react-native";
+import { useCallback, useState } from "react";
+import { ScrollView, View, Image, StyleSheet, RefreshControl } from "react-native";
 import type { ImageSourcePropType } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,14 +10,13 @@ import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAuth } from "@/store/AuthContext";
 import { useTheme } from "@/theme/ThemeContext";
-import { spacing, radius, typography } from "@/theme/tokens";
+import { spacing, radius } from "@/theme/tokens";
 import { Text, Card, Rating, Badge, Avatar, BoatVisual, ScreenContainer, Touchable, Reveal, Skeleton, useToast } from "@/components/ui";
 import * as boatsApi from "@/api/boats";
 import * as craftsmenApi from "@/api/craftsmen";
 import * as notificationsApi from "@/api/notifications";
-import * as maintenanceApi from "@/api/maintenance";
 import { ApiError } from "@/api/client";
-import type { Boat, MaintenanceRecord } from "@/types/api";
+import type { Boat } from "@/types/api";
 import type { Craftsman } from "@/types/mico";
 import { SPECIALTY_LABELS } from "@/types/mico";
 import type { MainTabParamList } from "@/navigation/MainTabs";
@@ -36,25 +35,6 @@ type QuickAction = {
   primary?: boolean;
 };
 
-/** Gorseldeki tek bir objeyi (siren isigi, altin M rozeti vb.) isaret eden,
- * kaynak gorsele gore oranli (0-1) konum/boyut — cihaz genisligi ne olursa
- * olsun "contain" ile sigdirilmis resmin uzerine doğru hizada oturur. */
-type HeroGlowSpec = { relX: number; relY: number; relSize: number; colorA: string; colorB: string };
-
-type HeroVisual =
-  | { type: "image"; source: ImageSourcePropType; aspect: number; glow?: HeroGlowSpec }
-  | { type: "icon"; icon: keyof typeof Ionicons.glyphMap };
-
-type HeroBanner = {
-  key: string;
-  titleLine1: string;
-  titleLine2: string;
-  accentColor: string;
-  subtitle: string;
-  visual: HeroVisual;
-  onPress: () => void;
-};
-
 const QUICK_ACTION_ICON = {
   newRequest: require("../../../assets/home-icons/home-newrequest.png"),
   findCraftsman: require("../../../assets/home-icons/home-find-craftsman.png"),
@@ -64,37 +44,6 @@ const QUICK_ACTION_ICON = {
   profile: require("../../../assets/home-icons/home-profile.png"),
 } as const;
 
-const GOLD_GLOW = { colorA: "#C9A227", colorB: "#FCE9A8" };
-
-const HERO_IMAGE = {
-  support: {
-    source: require("../../../assets/hero-icons/hero-support.png"),
-    aspect: 780 / 697,
-    // Siren isigi — mavi/kirmizi donen alarm isigi gibi yanip sonuyor.
-    glow: { relX: 0.842, relY: 0.724, relSize: 0.2, colorA: "#3D8BFF", colorB: "#FF4D4D" },
-  },
-  craftsmen: {
-    source: require("../../../assets/hero-icons/hero-craftsmen.png"),
-    aspect: 298 / 261,
-    glow: { relX: 0.857, relY: 0.163, relSize: 0.2, ...GOLD_GLOW },
-  },
-  boat: {
-    source: require("../../../assets/hero-icons/hero-boat.png"),
-    aspect: 900 / 652,
-    glow: { relX: 0.873, relY: 0.861, relSize: 0.16, ...GOLD_GLOW },
-  },
-  offers: {
-    source: require("../../../assets/hero-icons/hero-offers.png"),
-    aspect: 900 / 751,
-    glow: { relX: 0.906, relY: 0.744, relSize: 0.16, ...GOLD_GLOW },
-  },
-  calendar: {
-    source: require("../../../assets/hero-icons/hero-calendar.png"),
-    aspect: 832 / 756,
-    glow: { relX: 0.077, relY: 0.792, relSize: 0.16, ...GOLD_GLOW },
-  },
-} as const;
-
 export function HomeScreen({ navigation }: Props) {
   const { user } = useAuth();
   const { theme } = useTheme();
@@ -102,7 +51,6 @@ export function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [boat, setBoat] = useState<Boat | null>(null);
   const [craftsmen, setCraftsmen] = useState<Craftsman[]>([]);
-  const [maintenanceRecords, setMaintenanceRecords] = useState<MaintenanceRecord[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -116,11 +64,9 @@ export function HomeScreen({ navigation }: Props) {
           craftsmenApi.listCraftsmen(),
           notificationsApi.listNotifications(),
         ]);
-        const primaryBoat = boats[0] ?? null;
-        setBoat(primaryBoat);
+        setBoat(boats[0] ?? null);
         setCraftsmen(craftsmenRes.items.slice(0, 4));
         setUnreadCount(notificationsRes.items.filter((n) => !n.readAt).length);
-        setMaintenanceRecords(primaryBoat ? await maintenanceApi.listMaintenance(primaryBoat.id).catch(() => []) : []);
       } catch (e) {
         show(e instanceof ApiError ? e.message : "Ana sayfa yüklenemedi.", "error");
       } finally {
@@ -153,87 +99,6 @@ export function HomeScreen({ navigation }: Props) {
     { key: "profile", icon: QUICK_ACTION_ICON.profile, label: "Profilim", onPress: () => navigation.navigate("Profile") },
   ];
 
-  // Bakim rehberindeki en yakin planli tarihe gore kisisellestirilmis
-  // hatirlatma banner'i — sadece gecikmis veya 30 gun icinde olan varsa gosterilir.
-  const reminderBanners: HeroBanner[] = [];
-  const nextDue = maintenanceRecords
-    .filter((r) => r.nextDueDate)
-    .sort((a, b) => new Date(a.nextDueDate as string).getTime() - new Date(b.nextDueDate as string).getTime())[0];
-  if (nextDue && boat) {
-    const diffDays = Math.ceil((new Date(nextDue.nextDueDate as string).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
-    if (diffDays < 0) {
-      reminderBanners.push({
-        key: "maint-overdue",
-        titleLine1: `${nextDue.title}`,
-        titleLine2: "bakımı gecikti",
-        accentColor: theme.danger,
-        subtitle: `${boat.name} için ${Math.abs(diffDays)} gün önce planlanmıştı`,
-        visual: { type: "icon", icon: "alert-circle" },
-        onPress: () => navigation.navigate("BoatDetail", { boatId: boat.id }),
-      });
-    } else if (diffDays <= 30) {
-      reminderBanners.push({
-        key: "maint-upcoming",
-        titleLine1: `${nextDue.title} zamanı`,
-        titleLine2: "yaklaşıyor",
-        accentColor: theme.accent,
-        subtitle: diffDays === 0 ? `${boat.name} için bugün planlandı` : `${boat.name} için ${diffDays} gün kaldı`,
-        visual: { type: "icon", icon: "time-outline" },
-        onPress: () => navigation.navigate("BoatDetail", { boatId: boat.id }),
-      });
-    }
-  }
-
-  const featureBanners: HeroBanner[] = [
-    {
-      key: "feature-support",
-      titleLine1: "İhtiyacın olduğunda",
-      titleLine2: "MİÇO yanında",
-      accentColor: theme.accent,
-      subtitle: "Denizde yalnız değilsin, ihtiyacın olduğunda doğru desteğe ulaş.",
-      visual: { type: "image", ...HERO_IMAGE.support },
-      onPress: () => navigation.navigate("CraftsmanList"),
-    },
-    {
-      key: "feature-craftsmen",
-      titleLine1: "Doğru ustayı",
-      titleLine2: "kolayca bul",
-      accentColor: theme.accent,
-      subtitle: "Teknenle ilgili tüm işler için doğru ustalara hızlıca ulaş.",
-      visual: { type: "image", ...HERO_IMAGE.craftsmen },
-      onPress: () => navigation.navigate("CraftsmanList"),
-    },
-    {
-      key: "feature-guide",
-      titleLine1: "Tekneni tek",
-      titleLine2: "yerde yönet",
-      accentColor: theme.accent,
-      subtitle: "Teknenle ilgili bilgileri tek bir yerde tut.",
-      visual: { type: "image", ...HERO_IMAGE.boat },
-      onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
-    },
-    {
-      key: "feature-offers",
-      titleLine1: "Teklifleri",
-      titleLine2: "karşılaştır",
-      accentColor: theme.accent,
-      subtitle: "Gelen teklifleri tek ekranda incele, ihtiyacına uygun ustayı seç.",
-      visual: { type: "image", ...HERO_IMAGE.offers },
-      onPress: () => navigation.navigate("ServiceRequests"),
-    },
-    {
-      key: "feature-calendar",
-      titleLine1: "Bakım takvimini",
-      titleLine2: "oluştur",
-      accentColor: theme.accent,
-      subtitle: "Bakım tarihlerini unutma, teknenin ihtiyaçlarını tek yerden takip et.",
-      visual: { type: "image", ...HERO_IMAGE.calendar },
-      onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
-    },
-  ];
-
-  const heroBanners: HeroBanner[] = [...reminderBanners, ...featureBanners];
-
   if (isInitialLoading) {
     return (
       <ScreenContainer>
@@ -248,7 +113,6 @@ export function HomeScreen({ navigation }: Props) {
             <View style={styles.bellButton} />
           </View>
           <Skeleton width="100%" height={96} radius={radius.xl} style={{ marginTop: spacing.lg, backgroundColor: "rgba(255,255,255,0.10)" }} />
-          <Skeleton width="100%" height={120} radius={radius.lg} style={{ marginTop: spacing.lg, backgroundColor: "rgba(255,255,255,0.08)" }} />
         </LinearGradient>
 
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
@@ -339,10 +203,6 @@ export function HomeScreen({ navigation }: Props) {
                 </View>
               </Card>
             )}
-          </Reveal>
-
-          <Reveal delay={40}>
-            <HeroPromoCarousel banners={heroBanners} theme={theme} />
           </Reveal>
         </LinearGradient>
 
@@ -435,184 +295,6 @@ export function HomeScreen({ navigation }: Props) {
   );
 }
 
-/**
- * Kahraman alanina gomulu, KENDI KENDINE ilerleyen tanitim serisi.
- * Bilerek elle kaydirilamiyor (istek: "el ile kaydirilmasin, kendi kendine
- * saga kaysin") — FlatList/ScrollView yerine 3.5sn'de bir crossfade ile
- * icerik degistiriliyor. Rozetteki buyutec/ikon animasyonu native driver
- * kullanan hafif bir "nefes alma" + hafif sallanma efekti; sayfayi
- * kasmamasi icin renk degismiyor, donme/carpici bir hareket yok.
- */
-function HeroPromoCarousel({ banners, theme }: { banners: HeroBanner[]; theme: ReturnType<typeof useTheme>["theme"] }) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const opacity = useRef(new Animated.Value(1)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (banners.length <= 1) return;
-    const id = setInterval(() => {
-      Animated.timing(opacity, { toValue: 0, duration: 260, useNativeDriver: true }).start(() => {
-        setActiveIndex((i) => (i + 1) % banners.length);
-        Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: true }).start();
-      });
-    }, 5000);
-    return () => clearInterval(id);
-  }, [banners.length, opacity]);
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [pulse]);
-
-  if (banners.length === 0) return null;
-  const banner = banners[Math.min(activeIndex, banners.length - 1)];
-
-  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
-  const rotate = pulse.interpolate({ inputRange: [0, 1], outputRange: ["-6deg", "6deg"] });
-  // Fotograf gorseller icin daha az belirgin, "nefes alan" bir zoom —
-  // ikon rozetiyle ayni surucu kullaniliyor, ekstra animasyon dongusu acmiyor.
-  const imageScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.045] });
-
-  const isImage = banner.visual.type === "image";
-
-  return (
-    <View style={{ marginTop: spacing.lg }}>
-      <Touchable onPress={banner.onPress} haptic scaleTo={0.99}>
-        <Animated.View style={{ opacity }}>
-          <View style={isImage ? undefined : styles.heroPromoRow}>
-            <View style={isImage ? undefined : { flex: 1 }}>
-              <Text variant="h1" weight="extrabold" color="onDark">
-                {banner.titleLine1}
-              </Text>
-              <Text variant="h1" weight="extrabold" style={{ color: banner.accentColor }}>
-                {banner.titleLine2}
-              </Text>
-              <Text variant="bodySmall" color="onDark" style={{ marginTop: spacing.xs, opacity: 0.75 }}>
-                {banner.subtitle}
-              </Text>
-            </View>
-            {banner.visual.type === "icon" ? (
-              <View style={styles.heroPromoVisual}>
-                <Text style={[styles.heroPromoWatermark, { color: banner.accentColor }]}>M</Text>
-                <Animated.View
-                  style={[
-                    styles.heroPromoRing,
-                    { borderColor: banner.accentColor, transform: [{ scale }, { rotate }] },
-                  ]}
-                >
-                  <Ionicons name={banner.visual.icon} size={38} color={theme.textOnDark} />
-                </Animated.View>
-              </View>
-            ) : null}
-          </View>
-          {banner.visual.type === "image" ? (
-            <HeroImage
-              source={banner.visual.source}
-              aspect={banner.visual.aspect}
-              glow={banner.visual.glow}
-              imageScale={imageScale}
-            />
-          ) : null}
-        </Animated.View>
-      </Touchable>
-      {banners.length > 1 ? (
-        <View style={styles.dotsRow}>
-          {banners.map((b, i) => (
-            <View
-              key={b.key}
-              style={[styles.dot, { backgroundColor: i === activeIndex ? theme.accent : "rgba(255,255,255,0.3)" }]}
-            />
-          ))}
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-/** "contain" ile sigan gorselin, konteynir icindeki gercek dikdortgenini
- * (offset + boyut) hesaplar — glow rozetini oranli konuma dogru oturtmak icin. */
-function containFit(containerW: number, containerH: number, sourceAspect: number) {
-  const containerAspect = containerW / containerH;
-  let w: number, h: number;
-  if (containerAspect > sourceAspect) {
-    h = containerH;
-    w = h * sourceAspect;
-  } else {
-    w = containerW;
-    h = w / sourceAspect;
-  }
-  return { w, h, offsetX: (containerW - w) / 2, offsetY: (containerH - h) / 2 };
-}
-
-/**
- * Hero gorseli + istege bagli tek bir "glow" rozeti (siren isigi, altin M
- * rozeti vb.) — obje bazinda tam ayirma yapmadan, gorselin uzerine dogru
- * konuma oturan kucuk animasyonlu bir isik noktasi bindiriyoruz. Renk
- * gecisi kucuk tek bir daire uzerinde oldugu icin native driver olmadan da
- * (JS thread) sayfayi zorlamiyor.
- */
-function HeroImage({
-  source,
-  aspect,
-  glow,
-  imageScale,
-}: {
-  source: ImageSourcePropType;
-  aspect: number;
-  glow?: HeroGlowSpec;
-  imageScale: Animated.AnimatedInterpolation<number>;
-}) {
-  const [containerSize, setContainerSize] = useState<{ w: number; h: number } | null>(null);
-  const colorPhase = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (!glow) return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(colorPhase, { toValue: 1, duration: 900, useNativeDriver: false }),
-        Animated.timing(colorPhase, { toValue: 0, duration: 900, useNativeDriver: false }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [glow, colorPhase]);
-
-  const fit = glow && containerSize ? containFit(containerSize.w, containerSize.h, aspect) : null;
-  const glowColor = glow ? colorPhase.interpolate({ inputRange: [0, 1], outputRange: [glow.colorA, glow.colorB] }) : undefined;
-  const glowSize = glow && fit ? glow.relSize * fit.w : 0;
-
-  return (
-    <View style={styles.heroPromoImageBox} onLayout={(e) => setContainerSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
-      <Animated.Image source={source} style={[styles.heroPromoImage, { transform: [{ scale: imageScale }] }]} resizeMode="contain" />
-      {glow && fit ? (
-        <Animated.View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            left: fit.offsetX + glow.relX * fit.w - glowSize / 2,
-            top: fit.offsetY + glow.relY * fit.h - glowSize / 2,
-            width: glowSize,
-            height: glowSize,
-            borderRadius: glowSize / 2,
-            backgroundColor: glowColor,
-            opacity: 0.6,
-            shadowColor: glow.colorA,
-            shadowOpacity: 0.9,
-            shadowRadius: glowSize * 0.6,
-            shadowOffset: { width: 0, height: 0 },
-          }}
-        />
-      ) : null}
-    </View>
-  );
-}
-
 function SectionTitle({ children }: { children: string }) {
   return (
     <Text variant="h1" weight="extrabold" style={{ marginBottom: spacing.sm }}>
@@ -664,37 +346,4 @@ const styles = StyleSheet.create({
   quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   quickIconImage: { width: 30, height: 30 },
   sectionHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  heroPromoRow: { flexDirection: "row", alignItems: "center", minHeight: 140 },
-  heroPromoVisual: {
-    width: 120,
-    height: 120,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: spacing.sm,
-  },
-  heroPromoWatermark: {
-    position: "absolute",
-    right: -6,
-    top: -8,
-    fontSize: 62,
-    fontFamily: typography.fontFamily.extrabold,
-    opacity: 0.35,
-  },
-  heroPromoRing: {
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    borderWidth: 3,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
-  },
-  heroPromoImageBox: {
-    width: "100%",
-    height: 210,
-    marginTop: spacing.md,
-  },
-  heroPromoImage: { width: "100%", height: "100%" },
-  dotsRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.md, gap: 6 },
-  dot: { width: 6, height: 6, borderRadius: 3 },
 });
