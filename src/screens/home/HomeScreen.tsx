@@ -451,42 +451,47 @@ function HeroPromoCarousel({ banners, theme }: { banners: HeroBanner[]; theme: R
   // ikon rozetiyle ayni surucu kullaniliyor, ekstra animasyon dongusu acmiyor.
   const imageScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.045] });
 
+  const isImage = banner.visual.type === "image";
+
   return (
     <View style={{ marginTop: spacing.lg }}>
       <Touchable onPress={banner.onPress} haptic scaleTo={0.99}>
-        <Animated.View style={[styles.heroPromoRow, { opacity }]}>
-          <View style={{ flex: 1 }}>
-            <Text variant="h1" weight="extrabold" color="onDark">
-              {banner.titleLine1}
-            </Text>
-            <Text variant="h1" weight="extrabold" style={{ color: banner.accentColor }}>
-              {banner.titleLine2}
-            </Text>
-            <Text variant="bodySmall" color="onDark" style={{ marginTop: spacing.xs, opacity: 0.75 }}>
-              {banner.subtitle}
-            </Text>
+        <Animated.View style={{ opacity }}>
+          <View style={isImage ? undefined : styles.heroPromoRow}>
+            <View style={isImage ? undefined : { flex: 1 }}>
+              <Text variant="h1" weight="extrabold" color="onDark">
+                {banner.titleLine1}
+              </Text>
+              <Text variant="h1" weight="extrabold" style={{ color: banner.accentColor }}>
+                {banner.titleLine2}
+              </Text>
+              <Text variant="bodySmall" color="onDark" style={{ marginTop: spacing.xs, opacity: 0.75 }}>
+                {banner.subtitle}
+              </Text>
+            </View>
+            {banner.visual.type === "icon" ? (
+              <View style={styles.heroPromoVisual}>
+                <Text style={[styles.heroPromoWatermark, { color: banner.accentColor }]}>M</Text>
+                <Animated.View
+                  style={[
+                    styles.heroPromoRing,
+                    { borderColor: banner.accentColor, transform: [{ scale }, { rotate }] },
+                  ]}
+                >
+                  <Ionicons name={banner.visual.icon} size={38} color={theme.textOnDark} />
+                </Animated.View>
+              </View>
+            ) : null}
           </View>
           {banner.visual.type === "image" ? (
             <View style={styles.heroPromoImageBox}>
               <Animated.Image
                 source={banner.visual.source}
                 style={[styles.heroPromoImage, { transform: [{ scale: imageScale }] }]}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             </View>
-          ) : (
-            <View style={styles.heroPromoVisual}>
-              <Text style={[styles.heroPromoWatermark, { color: banner.accentColor }]}>M</Text>
-              <Animated.View
-                style={[
-                  styles.heroPromoRing,
-                  { borderColor: banner.accentColor, transform: [{ scale }, { rotate }] },
-                ]}
-              >
-                <Ionicons name={banner.visual.icon} size={38} color={theme.textOnDark} />
-              </Animated.View>
-            </View>
-          )}
+          ) : null}
         </Animated.View>
       </Touchable>
       {banners.length > 1 ? (
@@ -580,9 +585,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.08)",
   },
   heroPromoImageBox: {
-    width: 132,
-    height: 138,
-    marginLeft: spacing.sm,
+    width: "100%",
+    height: 210,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    marginTop: spacing.md,
     borderRadius: radius.lg,
     overflow: "hidden",
     borderWidth: 1,
