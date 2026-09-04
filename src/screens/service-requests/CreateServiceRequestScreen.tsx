@@ -382,7 +382,7 @@ export function CreateServiceRequestScreen({ route, navigation }: Props) {
             {boats.length > 0 ? (
               <>
                 <View style={styles.sectionHeaderRow}>
-                  <Text variant="bodySmall" weight="semibold" color="secondary">
+                  <Text variant="h2" weight="extrabold" color="primary">
                     Hangi teknen için?
                   </Text>
                   <Touchable onPress={() => navigation.navigate("AddBoat")}>
@@ -399,7 +399,7 @@ export function CreateServiceRequestScreen({ route, navigation }: Props) {
               </>
             ) : null}
 
-            <Text variant="bodySmall" weight="semibold" color="secondary" style={{ marginBottom: 6 }}>
+            <Text variant="h2" weight="extrabold" color="primary" style={{ marginBottom: 6 }}>
               Ne için usta arıyorsun?
             </Text>
             <View style={styles.categoryGrid}>
