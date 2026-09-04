@@ -120,7 +120,7 @@ export const lightTheme: Theme = {
   warningBg: palette.warning100,
   danger: palette.danger500,
   dangerBg: palette.danger100,
-  heroGradient: [palette.navy950, palette.navy700] as const,
+  heroGradient: [palette.navy950, palette.navy900] as const,
   tabBarBg: palette.white,
   tabBarInactive: palette.slate400,
   shadowColor: palette.navy900,
