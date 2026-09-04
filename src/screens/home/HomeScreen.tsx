@@ -56,6 +56,7 @@ const PROMO_BANNER_ASPECT = 1774 / 887;
 const PROMO_IMAGE = {
   calendar: require("../../../assets/promo-icons/promo-calendar.png"),
   support: require("../../../assets/promo-icons/promo-support.png"),
+  craftsmen: require("../../../assets/promo-icons/promo-craftsmen.png"),
   boat: require("../../../assets/promo-icons/promo-boat.png"),
   offers: require("../../../assets/promo-icons/promo-offers.png"),
 } as const;
@@ -124,6 +125,11 @@ export function HomeScreen({ navigation }: Props) {
     {
       key: "promo-support",
       source: PROMO_IMAGE.support,
+      onPress: () => navigation.navigate("CraftsmanList"),
+    },
+    {
+      key: "promo-craftsmen",
+      source: PROMO_IMAGE.craftsmen,
       onPress: () => navigation.navigate("CraftsmanList"),
     },
     {
