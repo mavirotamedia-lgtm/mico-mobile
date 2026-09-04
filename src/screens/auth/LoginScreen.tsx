@@ -73,11 +73,11 @@ export function LoginScreen({ navigation }: Props) {
     <View style={{ flex: 1, backgroundColor: palette.navy950 }}>
       <Animated.Image
         source={{ uri: BG_IMAGE }}
-        style={[StyleSheet.absoluteFillObject, { transform: [{ scale: bgScale }] }]}
+        style={[StyleSheet.absoluteFill, { transform: [{ scale: bgScale }] }]}
         resizeMode="cover"
         blurRadius={2}
       />
-      <LinearGradient colors={["rgba(6,15,32,0.65)", "rgba(6,15,32,0.8)"]} style={StyleSheet.absoluteFillObject} />
+      <LinearGradient colors={["rgba(6,15,32,0.65)", "rgba(6,15,32,0.8)"]} style={StyleSheet.absoluteFill} />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView

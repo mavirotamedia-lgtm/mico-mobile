@@ -56,7 +56,7 @@ export function Modal({ visible, onClose, title, children }: Props) {
 
 const styles = StyleSheet.create({
   flexEnd: { flex: 1, justifyContent: "flex-end" },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(6,15,32,0.55)" },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(6,15,32,0.55)" },
   sheet: {
     maxHeight: "85%",
     borderTopLeftRadius: radius.xl,

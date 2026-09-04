@@ -171,9 +171,9 @@ export function AddBoatScreen({ navigation, route }: Props) {
       <ScrollView contentContainerStyle={{ padding: spacing.lg }} keyboardShouldPersistTaps="handled">
         <Pressable onPress={handlePickPhoto} style={[styles.photoBox, { borderColor: theme.border }]}>
           {photoUri ? (
-            <Image source={{ uri: photoUri }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+            <Image source={{ uri: photoUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
           ) : (
-            <BoatVisual image={null} type={selectedType.value} style={StyleSheet.absoluteFillObject} />
+            <BoatVisual image={null} type={selectedType.value} style={StyleSheet.absoluteFill} />
           )}
           <View style={styles.photoOverlay}>
             {isUploadingPhoto ? (

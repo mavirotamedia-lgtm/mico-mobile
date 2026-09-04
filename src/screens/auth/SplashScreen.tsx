@@ -45,7 +45,7 @@ function BrandShimmer({ children }: { children: ReactNode }) {
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ alignItems: "center", overflow: "hidden" }}>
       {children}
       {width > 0 ? (
-        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { transform: [{ translateX }, { rotate: "14deg" }] }]}>
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { transform: [{ translateX }, { rotate: "14deg" }] }]}>
           <LinearGradient
             colors={["transparent", "rgba(255,255,255,0.55)", "transparent"]}
             start={{ x: 0, y: 0 }}
@@ -92,7 +92,7 @@ export function SplashScreen({ navigation }: Props) {
           arayüz metinleri/butonları üstüne binmeden okunur kalıyor. */}
       <VideoView
         player={player}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         contentFit="cover"
         nativeControls={false}
         pointerEvents="none"

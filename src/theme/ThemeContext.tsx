@@ -33,7 +33,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setItem(STORAGE_KEY, pref).catch(() => {});
   }
 
-  const resolvedMode = preference === "system" ? (systemScheme ?? "light") : preference;
+  const resolvedMode = preference === "system" ? (systemScheme === "dark" ? "dark" : "light") : preference;
   const theme = resolvedMode === "dark" ? darkTheme : lightTheme;
 
   const value = useMemo<ThemeContextValue>(

@@ -217,7 +217,7 @@ export function CreateServiceRequestScreen({ route, navigation }: Props) {
         <View style={styles.photoRow}>
           {photos.map((url) => (
             <View key={url} style={[styles.photoThumb, { borderColor: theme.border }]}>
-              <Image source={{ uri: resolveMediaUrl(url) }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+              <Image source={{ uri: resolveMediaUrl(url) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
               <Touchable onPress={() => handleRemovePhoto(url)} style={styles.photoRemove}>
                 <Ionicons name="close" size={12} color="#FFFFFF" />
               </Touchable>
