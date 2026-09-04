@@ -49,15 +49,19 @@ type PromoBanner = {
   source: ImageSourcePropType;
   objectSource: ImageSourcePropType;
   objectRelX: number;
+  objectRelY: number;
   objectRelWidth: number;
+  objectRelHeight: number;
   onPress: () => void;
 };
 
 /**
  * Basliklari ve alt yaziyi iceren sabit banner (source) + saginda ayri
  * bir katman olarak hareketlendirilen obje gorseli (objectSource).
- * objectRelX/objectRelWidth, objenin banner icindeki oranli (0-1)
- * konumunu ve genisligini belirtir (1774px kaynak genislige gore).
+ * Obje, kaynak gorseldeki gercek siluetinden (baglantili bilesen analizi
+ * ile, dikdortgen bir kesim degil) cikarildigi icin objectRelX/Y/Width/
+ * Height, objenin banner icindeki oranli (0-1) konumunu ve boyutunu
+ * belirtir (1774x887 kaynak boyuta gore).
  */
 const PROMO_BANNER_ASPECT = 1774 / 887;
 
@@ -65,32 +69,42 @@ const PROMO_IMAGE = {
   calendar: {
     source: require("../../../assets/promo-icons/promo-calendar.png"),
     objectSource: require("../../../assets/promo-icons/promo-calendar-object.png"),
-    objectRelX: 850 / 1774,
-    objectRelWidth: 924 / 1774,
+    objectRelX: 934 / 1774,
+    objectRelY: 103 / 887,
+    objectRelWidth: 828 / 1774,
+    objectRelHeight: 668 / 887,
   },
   support: {
     source: require("../../../assets/promo-icons/promo-support.png"),
     objectSource: require("../../../assets/promo-icons/promo-support-object.png"),
-    objectRelX: 750 / 1774,
-    objectRelWidth: 1024 / 1774,
+    objectRelX: 745 / 1774,
+    objectRelY: 96 / 887,
+    objectRelWidth: 1018 / 1774,
+    objectRelHeight: 714 / 887,
   },
   craftsmen: {
     source: require("../../../assets/promo-icons/promo-craftsmen.png"),
     objectSource: require("../../../assets/promo-icons/promo-craftsmen-object.png"),
-    objectRelX: 900 / 1774,
-    objectRelWidth: 874 / 1774,
+    objectRelX: 944 / 1774,
+    objectRelY: 143 / 887,
+    objectRelWidth: 671 / 1774,
+    objectRelHeight: 710 / 887,
   },
   boat: {
     source: require("../../../assets/promo-icons/promo-boat.png"),
     objectSource: require("../../../assets/promo-icons/promo-boat-object.png"),
-    objectRelX: 700 / 1774,
-    objectRelWidth: 1074 / 1774,
+    objectRelX: 619 / 1774,
+    objectRelY: 49 / 887,
+    objectRelWidth: 1056 / 1774,
+    objectRelHeight: 805 / 887,
   },
   offers: {
     source: require("../../../assets/promo-icons/promo-offers.png"),
     objectSource: require("../../../assets/promo-icons/promo-offers-object.png"),
-    objectRelX: 780 / 1774,
-    objectRelWidth: 994 / 1774,
+    objectRelX: 799 / 1774,
+    objectRelY: 67 / 887,
+    objectRelWidth: 913 / 1774,
+    objectRelHeight: 820 / 887,
   },
 } as const;
 
@@ -479,9 +493,9 @@ function PromoImage({ banner, cardWidth }: { banner: PromoBanner; cardWidth: num
         style={{
           position: "absolute",
           left: banner.objectRelX * cardWidth,
-          top: 0,
+          top: banner.objectRelY * cardHeight,
           width: banner.objectRelWidth * cardWidth,
-          height: cardHeight,
+          height: banner.objectRelHeight * cardHeight,
           transform: [{ scale }, { translateY }],
         }}
         resizeMode="contain"
