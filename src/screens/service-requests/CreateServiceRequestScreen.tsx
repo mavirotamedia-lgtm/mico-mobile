@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  categoryIcon: { width: 52, height: 52 },
+  categoryIcon: { width: 84, height: 84 },
   categoryCheck: {
     position: "absolute",
     top: 6,
