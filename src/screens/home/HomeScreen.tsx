@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, FlatList, View, Image, StyleSheet, RefreshControl, useWindowDimensions } from "react-native";
+import { ScrollView, FlatList, View, Image, StyleSheet, RefreshControl, Animated, Easing, useWindowDimensions } from "react-native";
 import type { ImageSourcePropType } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -47,18 +47,51 @@ const QUICK_ACTION_ICON = {
 type PromoBanner = {
   key: string;
   source: ImageSourcePropType;
+  objectSource: ImageSourcePropType;
+  objectRelX: number;
+  objectRelWidth: number;
   onPress: () => void;
 };
 
-/** Basliklari, alt yaziyi ve gorseli tek parca iceren hazir banner kartlari. */
+/**
+ * Basliklari ve alt yaziyi iceren sabit banner (source) + saginda ayri
+ * bir katman olarak hareketlendirilen obje gorseli (objectSource).
+ * objectRelX/objectRelWidth, objenin banner icindeki oranli (0-1)
+ * konumunu ve genisligini belirtir (1774px kaynak genislige gore).
+ */
 const PROMO_BANNER_ASPECT = 1774 / 887;
 
 const PROMO_IMAGE = {
-  calendar: require("../../../assets/promo-icons/promo-calendar.png"),
-  support: require("../../../assets/promo-icons/promo-support.png"),
-  craftsmen: require("../../../assets/promo-icons/promo-craftsmen.png"),
-  boat: require("../../../assets/promo-icons/promo-boat.png"),
-  offers: require("../../../assets/promo-icons/promo-offers.png"),
+  calendar: {
+    source: require("../../../assets/promo-icons/promo-calendar.png"),
+    objectSource: require("../../../assets/promo-icons/promo-calendar-object.png"),
+    objectRelX: 850 / 1774,
+    objectRelWidth: 924 / 1774,
+  },
+  support: {
+    source: require("../../../assets/promo-icons/promo-support.png"),
+    objectSource: require("../../../assets/promo-icons/promo-support-object.png"),
+    objectRelX: 750 / 1774,
+    objectRelWidth: 1024 / 1774,
+  },
+  craftsmen: {
+    source: require("../../../assets/promo-icons/promo-craftsmen.png"),
+    objectSource: require("../../../assets/promo-icons/promo-craftsmen-object.png"),
+    objectRelX: 900 / 1774,
+    objectRelWidth: 874 / 1774,
+  },
+  boat: {
+    source: require("../../../assets/promo-icons/promo-boat.png"),
+    objectSource: require("../../../assets/promo-icons/promo-boat-object.png"),
+    objectRelX: 700 / 1774,
+    objectRelWidth: 1074 / 1774,
+  },
+  offers: {
+    source: require("../../../assets/promo-icons/promo-offers.png"),
+    objectSource: require("../../../assets/promo-icons/promo-offers-object.png"),
+    objectRelX: 780 / 1774,
+    objectRelWidth: 994 / 1774,
+  },
 } as const;
 
 export function HomeScreen({ navigation }: Props) {
@@ -119,27 +152,27 @@ export function HomeScreen({ navigation }: Props) {
   const promoBanners: PromoBanner[] = [
     {
       key: "promo-calendar",
-      source: PROMO_IMAGE.calendar,
+      ...PROMO_IMAGE.calendar,
       onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
     },
     {
       key: "promo-support",
-      source: PROMO_IMAGE.support,
+      ...PROMO_IMAGE.support,
       onPress: () => navigation.navigate("CraftsmanList"),
     },
     {
       key: "promo-craftsmen",
-      source: PROMO_IMAGE.craftsmen,
+      ...PROMO_IMAGE.craftsmen,
       onPress: () => navigation.navigate("CraftsmanList"),
     },
     {
       key: "promo-boat",
-      source: PROMO_IMAGE.boat,
+      ...PROMO_IMAGE.boat,
       onPress: () => (boat ? navigation.navigate("BoatDetail", { boatId: boat.id }) : navigation.navigate("AddBoat")),
     },
     {
       key: "promo-offers",
-      source: PROMO_IMAGE.offers,
+      ...PROMO_IMAGE.offers,
       onPress: () => navigation.navigate("ServiceRequests"),
     },
   ];
@@ -397,11 +430,7 @@ function PromoBannerCarousel({ banners, theme }: { banners: PromoBanner[]; theme
         }}
         renderItem={({ item }) => (
           <Touchable onPress={item.onPress} haptic scaleTo={0.99} style={{ width: cardWidth }}>
-            <Image
-              source={item.source}
-              style={{ width: cardWidth, height: cardWidth / PROMO_BANNER_ASPECT }}
-              resizeMode="contain"
-            />
+            <PromoImage banner={item} cardWidth={cardWidth} />
           </Touchable>
         )}
       />
@@ -415,6 +444,48 @@ function PromoBannerCarousel({ banners, theme }: { banners: PromoBanner[]; theme
           ))}
         </View>
       ) : null}
+    </View>
+  );
+}
+
+/**
+ * Sabit banner (baslik + alt yazi) uzerine, saginda ayri bir katman
+ * olarak hafifce "nefes alan" (kucuk olcek + dikey sallanma) obje
+ * gorseli bindiriliyor. Yazi hicbir zaman hareket etmiyor.
+ */
+function PromoImage({ banner, cardWidth }: { banner: PromoBanner; cardWidth: number }) {
+  const cardHeight = cardWidth / PROMO_BANNER_ASPECT;
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+
+  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.035] });
+  const translateY = pulse.interpolate({ inputRange: [0, 1], outputRange: [0, -5] });
+
+  return (
+    <View style={{ width: cardWidth, height: cardHeight }}>
+      <Image source={banner.source} style={{ width: cardWidth, height: cardHeight }} resizeMode="contain" />
+      <Animated.Image
+        source={banner.objectSource}
+        style={{
+          position: "absolute",
+          left: banner.objectRelX * cardWidth,
+          top: 0,
+          width: banner.objectRelWidth * cardWidth,
+          height: cardHeight,
+          transform: [{ scale }, { translateY }],
+        }}
+        resizeMode="contain"
+      />
     </View>
   );
 }
