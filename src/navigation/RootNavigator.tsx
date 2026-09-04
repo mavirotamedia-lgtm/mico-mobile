@@ -1,4 +1,4 @@
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, type NavigatorScreenParams } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { View, ActivityIndicator } from "react-native";
 import { useAuth } from "@/store/AuthContext";
@@ -7,7 +7,7 @@ import { palette } from "@/theme/tokens";
 import { SplashScreen } from "@/screens/auth/SplashScreen";
 import { LoginScreen } from "@/screens/auth/LoginScreen";
 import { RegisterScreen } from "@/screens/auth/RegisterScreen";
-import { MainTabs } from "@/navigation/MainTabs";
+import { MainTabs, type MainTabParamList } from "@/navigation/MainTabs";
 import { AddBoatScreen } from "@/screens/boats/AddBoatScreen";
 import { BoatDetailScreen } from "@/screens/boats/BoatDetailScreen";
 import { CreateServiceRequestScreen } from "@/screens/service-requests/CreateServiceRequestScreen";
@@ -34,7 +34,7 @@ export type AuthStackParamList = {
 };
 
 export type AppStackParamList = {
-  MainTabs: undefined;
+  MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   AddBoat: { boatId?: string } | undefined;
   BoatDetail: { boatId: string };
   CreateServiceRequest: { boatId?: string } | undefined;
