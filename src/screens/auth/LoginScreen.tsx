@@ -128,6 +128,16 @@ export function LoginScreen({ navigation }: Props) {
               onChangeText={setPassword}
             />
 
+            <Text
+              variant="bodySmall"
+              weight="semibold"
+              color="accent"
+              style={{ textAlign: "right", marginBottom: spacing.sm }}
+              onPress={() => navigation.navigate("ForgotPassword")}
+            >
+              Şifremi unuttum?
+            </Text>
+
             {error ? (
               <View style={[styles.errorBanner, { backgroundColor: theme.dangerBg }]}>
                 <Ionicons name="alert-circle" size={16} color={theme.danger} />

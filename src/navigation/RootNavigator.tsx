@@ -7,6 +7,8 @@ import { palette } from "@/theme/tokens";
 import { SplashScreen } from "@/screens/auth/SplashScreen";
 import { LoginScreen } from "@/screens/auth/LoginScreen";
 import { RegisterScreen } from "@/screens/auth/RegisterScreen";
+import { ForgotPasswordScreen } from "@/screens/auth/ForgotPasswordScreen";
+import { ResetPasswordScreen } from "@/screens/auth/ResetPasswordScreen";
 import { MainTabs, type MainTabParamList } from "@/navigation/MainTabs";
 import { AddBoatScreen } from "@/screens/boats/AddBoatScreen";
 import { BoatDetailScreen } from "@/screens/boats/BoatDetailScreen";
@@ -31,6 +33,8 @@ export type AuthStackParamList = {
   Splash: undefined;
   Login: undefined;
   Register: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: { email: string };
 };
 
 export type AppStackParamList = {
@@ -106,6 +110,8 @@ export function RootNavigator() {
           <AuthStack.Screen name="Splash" component={SplashScreen} />
           <AuthStack.Screen name="Login" component={LoginScreen} />
           <AuthStack.Screen name="Register" component={RegisterScreen} />
+          <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         </AuthStack.Navigator>
       )}
     </NavigationContainer>
